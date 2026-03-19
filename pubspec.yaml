@@ -1,0 +1,49 @@
+name: healthai_coach_mobile
+description: HealthAI Coach — Mobile companion app
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Navigation
+  go_router: ^14.0.0
+
+  # State management
+  flutter_riverpod: ^2.5.0
+  riverpod_annotation: ^2.3.0
+
+  # Réseau
+  dio: ^5.4.0
+
+  # Caméra (Feature A)
+  camera: ^0.11.0
+  image_picker: ^1.1.0
+  flutter_image_compress: ^2.3.0
+
+  # Stockage local offline (Feature C)
+  isar: ^3.1.0
+  isar_flutter_libs: ^3.1.0
+  path_provider: ^2.1.0
+
+  # Vidéo (Feature B)
+  video_player: ^2.8.0
+
+  # UI
+  cached_network_image: ^3.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.0
+  riverpod_generator: ^2.4.0
+  isar_generator: ^3.1.0
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
