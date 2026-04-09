@@ -49,6 +49,9 @@ class MealAnalysisModel {
   final double totalCarbs;
   final double totalFats;
   final List<String> suggestions;
+  final bool? isSafe;
+  final List<String> warnings;
+  final String? advice;
 
   const MealAnalysisModel({
     required this.foods,
@@ -57,6 +60,9 @@ class MealAnalysisModel {
     required this.totalCarbs,
     required this.totalFats,
     required this.suggestions,
+    this.isSafe,
+    this.warnings = const [],
+    this.advice,
   });
 
   factory MealAnalysisModel.fromJson(Map<String, dynamic> json) {
@@ -76,6 +82,32 @@ class MealAnalysisModel {
     );
   }
 
+  /// Construit un MealAnalysisModel depuis la réponse de /api/nutrition/upload
+  factory MealAnalysisModel.fromUploadJson(Map<String, dynamic> json) {
+    final macros = json['macros'] as Map<String, dynamic>? ?? {};
+    final calories = (macros['calories'] as num?)?.toDouble() ?? 0;
+    final protein = (macros['protein'] as num?)?.toDouble() ?? 0;
+    final carbs = (macros['carbs'] as num?)?.toDouble() ?? 0;
+    final fat = (macros['fat'] as num?)?.toDouble() ?? 0;
+
+    return MealAnalysisModel(
+      foods: [
+        FoodItemModel(
+          name: 'Repas analysé',
+          calories: calories,
+          proteins: protein,
+          carbs: carbs,
+          fats: fat,
+        ),
+      ],
+      totalCalories: calories,
+      totalProteins: protein,
+      totalCarbs: carbs,
+      totalFats: fat,
+      suggestions: [],
+    );
+  }
+
   Map<String, dynamic> toJson() => {
         'foods': foods.map((e) => e.toJson()).toList(),
         'totalCalories': totalCalories,
@@ -92,5 +124,26 @@ class MealAnalysisModel {
         totalCarbs: totalCarbs,
         totalFats: totalFats,
         suggestions: suggestions,
+        isSafe: isSafe,
+        warnings: warnings,
+        advice: advice,
       );
+
+  MealAnalysisModel withAiAnalysis({
+    required bool isSafe,
+    required List<String> warnings,
+    required String advice,
+  }) {
+    return MealAnalysisModel(
+      foods: foods,
+      totalCalories: totalCalories,
+      totalProteins: totalProteins,
+      totalCarbs: totalCarbs,
+      totalFats: totalFats,
+      suggestions: suggestions,
+      isSafe: isSafe,
+      warnings: warnings,
+      advice: advice,
+    );
+  }
 }

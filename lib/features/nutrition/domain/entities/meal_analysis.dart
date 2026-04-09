@@ -6,6 +6,11 @@ class MealAnalysis {
   final double totalFats;
   final List<String> suggestions;
 
+  // Champs IA (POST /api/nutrition/analyze)
+  final bool? isSafe;
+  final List<String> warnings;
+  final String? advice;
+
   const MealAnalysis({
     required this.foods,
     required this.totalCalories,
@@ -13,6 +18,9 @@ class MealAnalysis {
     required this.totalCarbs,
     required this.totalFats,
     required this.suggestions,
+    this.isSafe,
+    this.warnings = const [],
+    this.advice,
   });
 
   MealAnalysis copyWith({
@@ -22,6 +30,9 @@ class MealAnalysis {
     double? totalCarbs,
     double? totalFats,
     List<String>? suggestions,
+    bool? isSafe,
+    List<String>? warnings,
+    String? advice,
   }) {
     return MealAnalysis(
       foods: foods ?? this.foods,
@@ -30,6 +41,9 @@ class MealAnalysis {
       totalCarbs: totalCarbs ?? this.totalCarbs,
       totalFats: totalFats ?? this.totalFats,
       suggestions: suggestions ?? this.suggestions,
+      isSafe: isSafe ?? this.isSafe,
+      warnings: warnings ?? this.warnings,
+      advice: advice ?? this.advice,
     );
   }
 }

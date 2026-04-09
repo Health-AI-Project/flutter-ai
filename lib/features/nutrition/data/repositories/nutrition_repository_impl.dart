@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../../domain/entities/meal_analysis.dart';
 import '../../domain/repositories/nutrition_repository.dart';
 import '../../../../core/network/dio_client.dart';
@@ -17,21 +18,53 @@ class NutritionRepositoryImpl implements NutritionRepository {
     final compressedPath = await ImageUtils.compress(imagePath);
 
     try {
+      // Étape 1 : upload de l'image → macros brutes
       final formData = FormData.fromMap({
-        'image': await MultipartFile.fromFile(
+        'file': await MultipartFile.fromFile(
           compressedPath,
           filename: 'meal.jpg',
         ),
         'userId': userId,
       });
 
-      final response = await _dio.post(
+      final uploadResponse = await _dio.post(
         ApiConstants.uploadMeal,
         data: formData,
       );
 
-      final model =
-          MealAnalysisModel.fromJson(response.data as Map<String, dynamic>);
+      MealAnalysisModel model = MealAnalysisModel.fromUploadJson(
+        uploadResponse.data as Map<String, dynamic>,
+      );
+
+      // Étape 2 : analyse IA → is_safe, warnings, advice
+      try {
+        final analyzeResponse = await _dio.post(
+          ApiConstants.analyzeMeal,
+          data: {
+            'ingredients': ['meal'],
+            'macros': {
+              'calories': model.totalCalories.toInt(),
+              'protein': model.totalProteins.toInt(),
+              'carbs': model.totalCarbs.toInt(),
+              'fat': model.totalFats.toInt(),
+            },
+          },
+        );
+
+        final aiData = analyzeResponse.data as Map<String, dynamic>;
+        model = model.withAiAnalysis(
+          isSafe: aiData['is_safe'] as bool? ?? true,
+          warnings: (aiData['warnings'] as List<dynamic>?)
+                  ?.map((e) => e as String)
+                  .toList() ??
+              [],
+          advice: aiData['advice'] as String? ?? '',
+        );
+      } catch (e) {
+        // L'analyse IA est non-bloquante : on retourne les macros même si elle échoue
+        debugPrint('WARN : analyse IA échouée (non-bloquant) — $e');
+      }
+
       return model.toEntity();
     } finally {
       await ImageUtils.deleteTemp(compressedPath);

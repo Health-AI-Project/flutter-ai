@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme.dart';
+import '../../../../core/auth/token_storage.dart';
 import '../providers/nutrition_provider.dart';
 import '../widgets/macro_table_widget.dart';
 
@@ -15,7 +16,6 @@ class MealResultScreen extends ConsumerStatefulWidget {
 }
 
 class _MealResultScreenState extends ConsumerState<MealResultScreen> {
-  static const String _hardcodedUserId = 'user_placeholder';
   late final NutritionNotifier _notifier;
 
   @override
@@ -23,8 +23,9 @@ class _MealResultScreenState extends ConsumerState<MealResultScreen> {
     super.initState();
     _notifier = ref.read(nutritionProvider.notifier);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final userId = await TokenStorage.getUserId() ?? 'guest';
       try {
-        await _notifier.analyzeMeal(widget.imagePath, _hardcodedUserId);
+        await _notifier.analyzeMeal(widget.imagePath, userId);
       } catch (e) {
         debugPrint('ERREUR analyzeMeal : $e');
       }
@@ -50,8 +51,9 @@ class _MealResultScreenState extends ConsumerState<MealResultScreen> {
             action: SnackBarAction(
               label: 'Réessayer',
               textColor: AppColors.textOnPrimary,
-              onPressed: () {
-                _notifier.analyzeMeal(widget.imagePath, _hardcodedUserId);
+              onPressed: () async {
+                final userId = await TokenStorage.getUserId() ?? 'guest';
+                _notifier.analyzeMeal(widget.imagePath, userId);
               },
             ),
           ),
@@ -111,8 +113,9 @@ class _MealResultScreenState extends ConsumerState<MealResultScreen> {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () {
-                        _notifier.analyzeMeal(widget.imagePath, _hardcodedUserId);
+                      onPressed: () async {
+                        final userId = await TokenStorage.getUserId() ?? 'guest';
+                        _notifier.analyzeMeal(widget.imagePath, userId);
                       },
                       child: const Text('Réessayer'),
                     ),

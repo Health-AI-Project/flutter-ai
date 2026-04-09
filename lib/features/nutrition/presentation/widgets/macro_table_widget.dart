@@ -3,6 +3,85 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/meal_analysis.dart';
 import '../providers/nutrition_provider.dart';
 
+class _AiAnalysisPanel extends StatelessWidget {
+  final MealAnalysis analysis;
+  const _AiAnalysisPanel({required this.analysis});
+
+  @override
+  Widget build(BuildContext context) {
+    final isSafe = analysis.isSafe ?? true;
+    final safeColor = isSafe ? const Color(0xFF2E7D32) : const Color(0xFFD04040);
+    final safeBg = isSafe ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE);
+    final safeIcon = isSafe ? Icons.check_circle : Icons.warning_amber_rounded;
+    final safeLabel = isSafe ? 'Repas sûr' : 'Attention requise';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: safeBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: safeColor.withOpacity(0.4)),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(safeIcon, color: safeColor, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Analyse IA — $safeLabel',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: safeColor,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          if (analysis.warnings.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            ...analysis.warnings.map(
+              (w) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.error_outline,
+                        size: 14, color: Color(0xFFD04040)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(w,
+                          style: const TextStyle(
+                              fontSize: 13, color: Color(0xFFD04040))),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (analysis.advice != null && analysis.advice!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.lightbulb_outline, size: 14, color: safeColor),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    analysis.advice!,
+                    style: TextStyle(fontSize: 13, color: safeColor),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class MacroTableWidget extends ConsumerStatefulWidget {
   final MealAnalysis analysis;
 
@@ -190,6 +269,10 @@ class _MacroTableWidgetState extends ConsumerState<MacroTableWidget> {
                     ))
                 .toList(),
           ),
+        ],
+        if (analysis.isSafe != null) ...[
+          const SizedBox(height: 20),
+          _AiAnalysisPanel(analysis: analysis),
         ],
       ],
     );

@@ -41,8 +41,9 @@ class _LoginScreenState extends State<LoginScreen> {
         },
       );
       final token = response.data['token'] as String?;
+      final userId = response.data['user']?['id'] as String?;
       if (token != null) {
-        await TokenStorage.save(token);
+        await TokenStorage.save(token, userId: userId);
         if (mounted) context.go('/home');
       } else {
         setState(() => _errorMessage = 'Réponse inattendue du serveur');

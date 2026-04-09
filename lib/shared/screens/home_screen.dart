@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../features/nutrition/presentation/screens/nutrition_hub_screen.dart';
 import '../../features/coach/presentation/screens/coach_hub_screen.dart';
+import '../../features/meal_plan/presentation/screens/meal_plan_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,6 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _screens = [
     NutritionHubScreen(),
     CoachHubScreen(),
+    MealPlanScreen(),
   ];
 
   @override
@@ -37,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 context.push('/camera');
                 return;
               }
+              // index 0→screen 0, 1→camera (handled), 2→screen 1, 3→screen 2
               setState(() => _currentIndex = index > 1 ? index - 1 : index);
             },
             items: [
@@ -61,6 +64,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icon(Icons.fitness_center_outlined),
                 activeIcon: Icon(Icons.fitness_center),
                 label: 'Coach',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.restaurant_menu_outlined),
+                activeIcon: Icon(Icons.restaurant_menu),
+                label: 'Menu IA',
               ),
             ],
           ),

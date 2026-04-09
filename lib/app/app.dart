@@ -8,6 +8,7 @@ import '../features/coach/presentation/screens/rpe_screen.dart';
 import '../features/coach/presentation/screens/session_screen.dart';
 import '../features/offline/domain/entities/day_plan.dart';
 import '../features/offline/presentation/screens/week_plan_screen.dart';
+import '../features/meal_plan/presentation/screens/meal_plan_screen.dart';
 import '../shared/screens/home_screen.dart';
 
 class HealthAIApp extends StatelessWidget {
@@ -59,6 +60,10 @@ final _router = GoRouter(
     GoRoute(
       path: '/rpe',
       builder: (context, state) => const RpeScreen(),
+    ),
+    GoRoute(
+      path: '/meal-plan',
+      builder: (context, state) => const MealPlanScreen(),
     ),
   ],
 );
