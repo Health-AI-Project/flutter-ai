@@ -25,6 +25,9 @@ dependencies:
   image_picker: ^1.1.0
   flutter_image_compress: ^2.3.0
 
+  # Stockage token auth
+  shared_preferences: ^2.3.0
+
   # Stockage local offline (Feature C)
   isar: ^3.1.0
   isar_flutter_libs: ^3.1.0

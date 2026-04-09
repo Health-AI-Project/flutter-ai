@@ -19,6 +19,12 @@ class ImageUtils {
         return sourcePath;
       }
 
+      // flutter_image_compress n'est pas supporté sur Linux/desktop
+      if (!Platform.isAndroid && !Platform.isIOS) {
+        debugPrint('WARN : compression non supportée sur cette plateforme');
+        return sourcePath;
+      }
+
       final result = await FlutterImageCompress.compressAndGetFile(
         sourcePath,
         targetPath,

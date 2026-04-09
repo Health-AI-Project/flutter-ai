@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'theme.dart';
+import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/nutrition/presentation/screens/camera_screen.dart';
 import '../features/nutrition/presentation/screens/meal_result_screen.dart';
 import '../features/coach/presentation/screens/rpe_screen.dart';
 import '../features/coach/presentation/screens/session_screen.dart';
 import '../features/offline/domain/entities/day_plan.dart';
 import '../features/offline/presentation/screens/week_plan_screen.dart';
-import '../shared/screens/dev_home_screen.dart';
+import '../shared/screens/home_screen.dart';
 
 class HealthAIApp extends StatelessWidget {
   const HealthAIApp({super.key});
@@ -23,11 +24,15 @@ class HealthAIApp extends StatelessWidget {
 }
 
 final _router = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/login',
   routes: [
     GoRoute(
-      path: '/',
-      builder: (context, state) => const DevHomeScreen(),
+      path: '/login',
+      builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: '/home',
+      builder: (context, state) => const HomeScreen(),
     ),
     GoRoute(
       path: '/camera',

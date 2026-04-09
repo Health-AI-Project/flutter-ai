@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../auth/token_storage.dart';
 import '../constants/api_constants.dart';
 
 class DioClient {
@@ -19,14 +20,19 @@ class DioClient {
 
 class _AuthInterceptor extends Interceptor {
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    // TODO: injecter le token JWT depuis le storage local
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+    final token = await TokenStorage.get();
+    if (token != null) {
+      options.headers['Authorization'] = 'Bearer $token';
+    }
     handler.next(options);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    // TODO: gestion 401 / refresh token
+    if (err.response?.statusCode == 401) {
+      TokenStorage.clear();
+    }
     handler.next(err);
   }
 }

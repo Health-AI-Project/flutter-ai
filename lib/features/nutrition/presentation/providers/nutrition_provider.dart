@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/meal_analysis.dart';
 import '../../domain/repositories/nutrition_repository.dart';
-import '../../data/repositories/nutrition_repository_mock.dart';
+import '../../data/repositories/nutrition_repository_impl.dart';
 
 final nutritionRepositoryProvider = Provider<NutritionRepository>(
-  (ref) => NutritionRepositoryMock(), // TODO: remplacer par NutritionRepositoryImpl() en prod
+  (ref) => NutritionRepositoryImpl(),
 );
 
 class NutritionNotifier extends AsyncNotifier<MealAnalysis?> {

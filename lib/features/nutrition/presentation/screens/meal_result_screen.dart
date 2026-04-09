@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../app/theme.dart';
 import '../providers/nutrition_provider.dart';
 import '../widgets/macro_table_widget.dart';
 
@@ -15,27 +16,24 @@ class MealResultScreen extends ConsumerStatefulWidget {
 
 class _MealResultScreenState extends ConsumerState<MealResultScreen> {
   static const String _hardcodedUserId = 'user_placeholder';
+  late final NutritionNotifier _notifier;
 
   @override
   void initState() {
     super.initState();
+    _notifier = ref.read(nutritionProvider.notifier);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      debugPrint('Début analyse — imagePath : ${widget.imagePath}');
       try {
-        await ref
-            .read(nutritionProvider.notifier)
-            .analyzeMeal(widget.imagePath, _hardcodedUserId);
-        debugPrint('Analyse terminée avec succès');
-      } catch (e, stackTrace) {
+        await _notifier.analyzeMeal(widget.imagePath, _hardcodedUserId);
+      } catch (e) {
         debugPrint('ERREUR analyzeMeal : $e');
-        debugPrint('Stack trace : $stackTrace');
       }
     });
   }
 
   @override
   void dispose() {
-    ref.read(nutritionProvider.notifier).reset();
+    Future(() => _notifier.reset());
     super.dispose();
   }
 
@@ -44,18 +42,16 @@ class _MealResultScreenState extends ConsumerState<MealResultScreen> {
     final nutritionState = ref.watch(nutritionProvider);
 
     ref.listen<AsyncValue>(nutritionProvider, (_, next) {
-      if (next is AsyncError) {
+      if (next is AsyncError && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.error.toString()),
-            backgroundColor: Colors.red,
+            backgroundColor: const Color(0xFFD04040),
             action: SnackBarAction(
               label: 'Réessayer',
-              textColor: Colors.white,
+              textColor: AppColors.textOnPrimary,
               onPressed: () {
-                ref
-                    .read(nutritionProvider.notifier)
-                    .analyzeMeal(widget.imagePath, _hardcodedUserId);
+                _notifier.analyzeMeal(widget.imagePath, _hardcodedUserId);
               },
             ),
           ),
@@ -64,9 +60,8 @@ class _MealResultScreenState extends ConsumerState<MealResultScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Résultats nutritionnels'),
-      ),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(title: const Text('Résultats nutritionnels')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -87,9 +82,15 @@ class _MealResultScreenState extends ConsumerState<MealResultScreen> {
                   padding: EdgeInsets.symmetric(vertical: 40),
                   child: Column(
                     children: [
-                      CircularProgressIndicator(),
+                      CircularProgressIndicator(color: AppColors.primary),
                       SizedBox(height: 16),
-                      Text('Analyse en cours…'),
+                      Text(
+                        'Analyse en cours…',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -98,18 +99,20 @@ class _MealResultScreenState extends ConsumerState<MealResultScreen> {
                 child: Column(
                   children: [
                     const Icon(Icons.error_outline,
-                        size: 48, color: Colors.red),
+                        size: 48, color: Color(0xFFD04040)),
                     const SizedBox(height: 8),
                     Text(
                       error.toString(),
                       textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
-                        ref
-                            .read(nutritionProvider.notifier)
-                            .analyzeMeal(widget.imagePath, _hardcodedUserId);
+                        _notifier.analyzeMeal(widget.imagePath, _hardcodedUserId);
                       },
                       child: const Text('Réessayer'),
                     ),
@@ -118,7 +121,9 @@ class _MealResultScreenState extends ConsumerState<MealResultScreen> {
               ),
               data: (analysis) {
                 if (analysis == null) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  );
                 }
                 return MacroTableWidget(analysis: analysis);
               },

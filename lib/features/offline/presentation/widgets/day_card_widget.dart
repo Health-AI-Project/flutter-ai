@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
+import '../../../../app/theme.dart';
 import '../../domain/entities/day_plan.dart';
 
 class DayCardWidget extends StatelessWidget {
@@ -8,40 +8,25 @@ class DayCardWidget extends StatelessWidget {
 
   const DayCardWidget({super.key, required this.dayPlan});
 
-  Color _muscleGroupColor(String muscleGroup) {
-    switch (muscleGroup.toLowerCase()) {
-      case 'pectoraux':
-        return Colors.blue;
-      case 'triceps':
-        return Colors.indigo;
-      case 'dos':
-        return Colors.green;
-      case 'biceps':
-        return Colors.teal;
-      case 'quadriceps':
-      case 'ischio-jambiers':
-      case 'jambes':
-        return Colors.orange;
-      case 'cardio':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     if (dayPlan.isRestDay) {
       return _RestDayCard(day: dayPlan.day, sessionType: dayPlan.sessionType);
     }
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border, width: 0.5),
+        boxShadow: const [
+          BoxShadow(blurRadius: 3, color: Color(0x10000000)),
+        ],
+      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: dayPlan.isRestDay
-            ? null
-            : () => context.push('/session', extra: dayPlan),
+        onTap: () => context.push('/session', extra: dayPlan),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -55,22 +40,43 @@ class DayCardWidget extends StatelessWidget {
                       children: [
                         Text(
                           dayPlan.day,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                         Text(
                           dayPlan.sessionType,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.primary,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  Chip(
-                    label: Text('${dayPlan.durationMinutes} min'),
-                    avatar: const Icon(Icons.timer, size: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.timer_outlined, size: 11, color: AppColors.primaryDark),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${dayPlan.durationMinutes} min',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -84,21 +90,24 @@ class DayCardWidget extends StatelessWidget {
                         flex: 3,
                         child: Text(
                           exercise.name,
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                       ),
                       Expanded(
                         flex: 2,
                         child: Text(
-                          '${exercise.sets} x ${exercise.reps}',
+                          '${exercise.sets} × ${exercise.reps}',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodySmall,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ),
-                      _MuscleGroupBadge(
-                        label: exercise.muscleGroup,
-                        color: _muscleGroupColor(exercise.muscleGroup),
-                      ),
+                      _MuscleGroupBadge(label: exercise.muscleGroup),
                     ],
                   ),
                 ),
@@ -119,34 +128,51 @@ class _RestDayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      color: Colors.grey.shade100,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            const Icon(Icons.bedtime, color: Colors.grey, size: 28),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  day,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.bold,
-                      ),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border, width: 0.5),
+      ),
+      child: Opacity(
+        opacity: 0.6,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceAlt,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                Text(
-                  sessionType,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey.shade500,
-                      ),
-                ),
-              ],
-            ),
-          ],
+                child: const Icon(Icons.bedtime_outlined, color: AppColors.textTertiary, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    day,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    sessionType,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -155,25 +181,23 @@ class _RestDayCard extends StatelessWidget {
 
 class _MuscleGroupBadge extends StatelessWidget {
   final String label;
-  final Color color;
 
-  const _MuscleGroupBadge({required this.label, required this.color});
+  const _MuscleGroupBadge({required this.label});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 11,
-          color: color,
-          fontWeight: FontWeight.w600,
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: AppColors.primaryDark,
         ),
       ),
     );

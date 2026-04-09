@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../../../../app/theme.dart';
 import '../providers/offline_provider.dart';
 import '../widgets/day_card_widget.dart';
 import '../widgets/sync_status_widget.dart';
@@ -28,11 +28,14 @@ class _WeekPlanScreenState extends ConsumerState<WeekPlanScreen> {
     final planState = ref.watch(weekPlanNotifierProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Planning de la semaine')),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Planning de la semaine'),
+      ),
       body: planState.when(
         data: (plan) {
           if (plan == null) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
           }
           return Column(
             children: [
@@ -54,19 +57,24 @@ class _WeekPlanScreenState extends ConsumerState<WeekPlanScreen> {
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
         error: (error, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.wifi_off, size: 64, color: Colors.grey),
+                const Icon(Icons.wifi_off, size: 64, color: AppColors.textTertiary),
                 const SizedBox(height: 16),
                 Text(
                   error.toString(),
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
@@ -81,11 +89,12 @@ class _WeekPlanScreenState extends ConsumerState<WeekPlanScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        icon: const Icon(Icons.sync),
-        label: const Text('Synchroniser'),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.textOnPrimary,
         onPressed: () =>
             ref.read(weekPlanNotifierProvider.notifier).forceSync(_userId),
+        child: const Icon(Icons.sync),
       ),
     );
   }

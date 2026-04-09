@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import '../../../../app/theme.dart';
 import '../../../offline/domain/entities/day_plan.dart';
 import '../../domain/entities/session_state.dart';
 import '../providers/coach_provider.dart';
@@ -19,19 +19,21 @@ class SessionScreen extends ConsumerStatefulWidget {
 }
 
 class _SessionScreenState extends ConsumerState<SessionScreen> {
+  SessionNotifier? _notifier;
+
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => ref
-          .read(sessionNotifierProvider.notifier)
-          .startSession(widget.dayPlan),
-    );
+    Future.microtask(() {
+      if (!mounted) return;
+      _notifier = ref.read(sessionNotifierProvider.notifier);
+      _notifier!.startSession(widget.dayPlan);
+    });
   }
 
   @override
   void dispose() {
-    ref.read(sessionNotifierProvider.notifier).cancelTimer();
+    _notifier?.cancelTimer();
     super.dispose();
   }
 
@@ -41,7 +43,10 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
 
     if (session == null) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
@@ -56,15 +61,24 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     final current = session.currentExerciseIndex + 1;
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(
-          '${widget.dayPlan.day} — Exercice $current/$total',
+        title: Text('${widget.dayPlan.day} — $current / $total'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(4),
+          child: LinearProgressIndicator(
+            value: current / total,
+            backgroundColor: AppColors.surfaceAlt,
+            color: AppColors.primary,
+            minHeight: 3,
+          ),
         ),
         actions: [
           if (session.phase == SessionPhase.rest)
             IconButton(
               icon: Icon(
                 session.isPaused ? Icons.play_arrow : Icons.pause,
+                color: AppColors.primary,
               ),
               onPressed: () =>
                   ref.read(sessionNotifierProvider.notifier).togglePause(),
@@ -73,8 +87,9 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
       ),
       body: Column(
         children: [
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.35,
+          Container(
+            height: MediaQuery.of(context).size.height * 0.32,
+            color: AppColors.surfaceAlt,
             child: VideoDemoWidget(videoUrl: exercise.videoUrl),
           ),
           ExerciseCardWidget(exercise: exercise),
@@ -86,19 +101,16 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              session.isPaused ? 'En pause' : 'Repos en cours...',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: Colors.grey),
+              session.isPaused ? 'En pause' : 'Repos en cours…',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
           ],
           const Spacer(),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             child: SizedBox(
               width: double.infinity,
-              child: _buildMainButton(context, session),
+              child: _buildMainButton(session),
             ),
           ),
         ],
@@ -106,32 +118,30 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     );
   }
 
-  Widget _buildMainButton(BuildContext context, SessionState session) {
+  Widget _buildMainButton(SessionState session) {
     if (session.phase == SessionPhase.rest) {
-      return FilledButton(
+      return ElevatedButton(
         onPressed: null,
-        style: FilledButton.styleFrom(
-          backgroundColor: Colors.grey.shade300,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.surfaceAlt,
+          foregroundColor: AppColors.textTertiary,
+          disabledBackgroundColor: AppColors.surfaceAlt,
+          disabledForegroundColor: AppColors.textTertiary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          minimumSize: const Size(double.infinity, 44),
         ),
-        child: Text(
-          'Repos en cours... (${session.timerSeconds}s)',
-          style: const TextStyle(color: Colors.grey),
-        ),
+        child: Text('Repos en cours… (${session.timerSeconds}s)'),
       );
     }
 
-    return FilledButton.icon(
-      icon: const Icon(Icons.arrow_forward),
-      label: Text(
-        session.isLastExercise ? 'Terminer la séance' : 'Exercice suivant →',
-      ),
-      style: FilledButton.styleFrom(
-        backgroundColor: Colors.green,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-      ),
+    return ElevatedButton(
       onPressed: () =>
           ref.read(sessionNotifierProvider.notifier).nextExercise(),
+      child: Text(
+        session.isLastExercise ? 'Terminer la séance' : 'Exercice suivant →',
+      ),
     );
   }
 }
