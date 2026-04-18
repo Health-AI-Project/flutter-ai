@@ -49,6 +49,8 @@ class MealAnalysisModel {
   final double totalCarbs;
   final double totalFats;
   final List<String> suggestions;
+  final String? detectedFood;
+  final double? confidence;
   final bool? isSafe;
   final List<String> warnings;
   final String? advice;
@@ -60,6 +62,8 @@ class MealAnalysisModel {
     required this.totalCarbs,
     required this.totalFats,
     required this.suggestions,
+    this.detectedFood,
+    this.confidence,
     this.isSafe,
     this.warnings = const [],
     this.advice,
@@ -89,11 +93,13 @@ class MealAnalysisModel {
     final protein = (macros['protein'] as num?)?.toDouble() ?? 0;
     final carbs = (macros['carbs'] as num?)?.toDouble() ?? 0;
     final fat = (macros['fat'] as num?)?.toDouble() ?? 0;
+    final detectedFood = json['detectedFood'] as String?;
+    final confidence = (json['confidence'] as num?)?.toDouble();
 
     return MealAnalysisModel(
       foods: [
         FoodItemModel(
-          name: 'Repas analysé',
+          name: detectedFood ?? 'Repas analysé',
           calories: calories,
           proteins: protein,
           carbs: carbs,
@@ -105,6 +111,8 @@ class MealAnalysisModel {
       totalCarbs: carbs,
       totalFats: fat,
       suggestions: [],
+      detectedFood: detectedFood,
+      confidence: confidence,
     );
   }
 
@@ -124,6 +132,8 @@ class MealAnalysisModel {
         totalCarbs: totalCarbs,
         totalFats: totalFats,
         suggestions: suggestions,
+        detectedFood: detectedFood,
+        confidence: confidence,
         isSafe: isSafe,
         warnings: warnings,
         advice: advice,
@@ -141,6 +151,8 @@ class MealAnalysisModel {
       totalCarbs: totalCarbs,
       totalFats: totalFats,
       suggestions: suggestions,
+      detectedFood: detectedFood,
+      confidence: confidence,
       isSafe: isSafe,
       warnings: warnings,
       advice: advice,

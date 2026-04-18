@@ -6,6 +6,10 @@ class MealAnalysis {
   final double totalFats;
   final List<String> suggestions;
 
+  // Champs reconnaissance visuelle (service Python)
+  final String? detectedFood;
+  final double? confidence;
+
   // Champs IA (POST /api/nutrition/analyze)
   final bool? isSafe;
   final List<String> warnings;
@@ -18,10 +22,14 @@ class MealAnalysis {
     required this.totalCarbs,
     required this.totalFats,
     required this.suggestions,
+    this.detectedFood,
+    this.confidence,
     this.isSafe,
     this.warnings = const [],
     this.advice,
   });
+
+  bool get hasMacros => totalProteins > 0 || totalCarbs > 0 || totalFats > 0;
 
   MealAnalysis copyWith({
     List<FoodItem>? foods,
@@ -30,6 +38,8 @@ class MealAnalysis {
     double? totalCarbs,
     double? totalFats,
     List<String>? suggestions,
+    String? detectedFood,
+    double? confidence,
     bool? isSafe,
     List<String>? warnings,
     String? advice,
@@ -41,6 +51,8 @@ class MealAnalysis {
       totalCarbs: totalCarbs ?? this.totalCarbs,
       totalFats: totalFats ?? this.totalFats,
       suggestions: suggestions ?? this.suggestions,
+      detectedFood: detectedFood ?? this.detectedFood,
+      confidence: confidence ?? this.confidence,
       isSafe: isSafe ?? this.isSafe,
       warnings: warnings ?? this.warnings,
       advice: advice ?? this.advice,

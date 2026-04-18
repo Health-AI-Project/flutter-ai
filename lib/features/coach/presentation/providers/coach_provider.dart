@@ -4,13 +4,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../offline/domain/entities/day_plan.dart';
-import '../../data/repositories/coach_repository_mock.dart';
+import '../../data/repositories/coach_repository_impl.dart';
 import '../../domain/entities/session_feedback.dart';
 import '../../domain/entities/session_state.dart';
 import '../../domain/repositories/coach_repository.dart';
+import '../../../../core/auth/token_storage.dart';
 
 final coachRepositoryProvider = Provider<CoachRepository>(
-  (ref) => CoachRepositoryMock(), // TODO: remplacer par CoachRepositoryImpl()
+  (ref) => CoachRepositoryImpl(),
 );
 
 final currentDayPlanProvider = StateProvider<DayPlan?>((ref) => null);
@@ -102,8 +103,9 @@ class SessionNotifier extends Notifier<SessionState?> {
     final current = state;
     if (current == null) return;
 
+    final userId = await TokenStorage.getUserId() ?? 'guest';
     final feedback = SessionFeedback(
-      userId: 'test-user-001',
+      userId: userId,
       sessionDay: current.dayPlan.day,
       rpe: rpe,
       completedAt: DateTime.now(),

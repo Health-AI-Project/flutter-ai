@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'theme.dart';
+import '../core/auth/token_storage.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/nutrition/presentation/screens/camera_screen.dart';
 import '../features/nutrition/presentation/screens/meal_result_screen.dart';
@@ -26,6 +27,13 @@ class HealthAIApp extends StatelessWidget {
 
 final _router = GoRouter(
   initialLocation: '/login',
+  redirect: (context, state) async {
+    final token = await TokenStorage.get();
+    final onLogin = state.matchedLocation == '/login';
+    if (token == null && !onLogin) return '/login';
+    if (token != null && onLogin) return '/home';
+    return null;
+  },
   routes: [
     GoRoute(
       path: '/login',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme.dart';
+import '../../../../core/auth/token_storage.dart';
 import '../providers/offline_provider.dart';
 import '../widgets/day_card_widget.dart';
 import '../widgets/sync_status_widget.dart';
@@ -13,14 +14,17 @@ class WeekPlanScreen extends ConsumerStatefulWidget {
 }
 
 class _WeekPlanScreenState extends ConsumerState<WeekPlanScreen> {
-  static const _userId = 'test-user-001';
+  String? _userId;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => ref.read(weekPlanNotifierProvider.notifier).loadPlan(_userId),
-    );
+    Future.microtask(() async {
+      _userId = await TokenStorage.getUserId() ?? 'guest';
+      if (mounted) {
+        ref.read(weekPlanNotifierProvider.notifier).loadPlan(_userId!);
+      }
+    });
   }
 
   @override
@@ -44,7 +48,7 @@ class _WeekPlanScreenState extends ConsumerState<WeekPlanScreen> {
                 syncedAt: plan.syncedAt,
                 onRefresh: () => ref
                     .read(weekPlanNotifierProvider.notifier)
-                    .forceSync(_userId),
+                    .forceSync(_userId ?? 'guest'),
               ),
               Expanded(
                 child: ListView.builder(
@@ -82,7 +86,7 @@ class _WeekPlanScreenState extends ConsumerState<WeekPlanScreen> {
                   label: const Text('Réessayer'),
                   onPressed: () => ref
                       .read(weekPlanNotifierProvider.notifier)
-                      .loadPlan(_userId),
+                      .loadPlan(_userId ?? 'guest'),
                 ),
               ],
             ),
@@ -93,7 +97,7 @@ class _WeekPlanScreenState extends ConsumerState<WeekPlanScreen> {
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textOnPrimary,
         onPressed: () =>
-            ref.read(weekPlanNotifierProvider.notifier).forceSync(_userId),
+            ref.read(weekPlanNotifierProvider.notifier).forceSync(_userId ?? 'guest'),
         child: const Icon(Icons.sync),
       ),
     );

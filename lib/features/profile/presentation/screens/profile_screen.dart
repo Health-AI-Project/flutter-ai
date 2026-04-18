@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../app/theme.dart';
+import '../../../../core/auth/token_storage.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -200,7 +202,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         side: const BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
-      onPressed: () {},
+      onPressed: () async {
+        await TokenStorage.clear();
+        if (context.mounted) context.go('/login');
+      },
       child: const Text('Se déconnecter'),
     );
   }

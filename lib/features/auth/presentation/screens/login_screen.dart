@@ -33,7 +33,13 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
     try {
-      final response = await DioClient.instance.post(
+      final authDio = Dio(BaseOptions(
+        baseUrl: ApiConstants.authBaseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 30),
+        headers: {'Content-Type': 'application/json'},
+      ));
+      final response = await authDio.post(
         ApiConstants.signIn,
         data: {
           'email': _emailController.text.trim(),

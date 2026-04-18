@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/repositories/offline_repository_mock.dart';
+import '../../data/repositories/offline_repository_impl.dart';
 import '../../domain/entities/week_plan.dart';
 import '../../domain/repositories/offline_repository.dart';
 
 final offlineRepositoryProvider = Provider<OfflineRepository>(
-  (ref) => OfflineRepositoryMock(), // TODO: remplacer par OfflineRepositoryImpl()
+  (ref) => OfflineRepositoryImpl(),
 );
 
 final weekPlanNotifierProvider =
