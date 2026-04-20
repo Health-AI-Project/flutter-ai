@@ -30,7 +30,12 @@ class NutritionRepositoryImpl implements NutritionRepository {
       final uploadResponse = await _dio.post(
         ApiConstants.uploadMeal,
         data: formData,
-      );
+      ).catchError((e) {
+        if (e is DioException && e.response?.statusCode == 500) {
+          throw Exception('Service d\'analyse indisponible. Réessaie plus tard.');
+        }
+        throw e;
+      });
 
       MealAnalysisModel model = MealAnalysisModel.fromUploadJson(
         uploadResponse.data as Map<String, dynamic>,
@@ -67,7 +72,10 @@ class NutritionRepositoryImpl implements NutritionRepository {
 
       return model.toEntity();
     } finally {
-      await ImageUtils.deleteTemp(compressedPath);
+      // Ne supprimer que si c'est un fichier temporaire créé par compress()
+      if (compressedPath != imagePath) {
+        await ImageUtils.deleteTemp(compressedPath);
+      }
     }
   }
 }

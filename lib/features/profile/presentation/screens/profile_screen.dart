@@ -19,12 +19,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Profil'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -32,8 +26,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildAvatarSection(),
-            const SizedBox(height: 16),
-            _buildStatsBar(),
             const SizedBox(height: 24),
             _buildSettingsSection(),
             const SizedBox(height: 24),
@@ -93,50 +85,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatsBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border, width: 0.5),
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          children: [
-            _buildStat('12', 'posts'),
-            const VerticalDivider(width: 1, thickness: 0.5),
-            _buildStat('248', 'likes'),
-            const VerticalDivider(width: 1, thickness: 0.5),
-            _buildStat('32', 'jours actifs'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStat(String value, String label) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSettingsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,7 +92,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const Padding(
           padding: EdgeInsets.only(bottom: 8),
           child: Text(
-            'PARAMÈTRES DU COMPTE',
+            'PARAMÈTRES',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
@@ -159,23 +107,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.border, width: 0.5),
           ),
-          child: Column(
-            children: [
-              _buildSettingRow('Modifier le profil', trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary)),
-              const Divider(height: 0.5, indent: 16),
-              _buildSettingRow('Modifier la photo', trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary)),
-              const Divider(height: 0.5, indent: 16),
-              _buildSettingRow(
-                'Notifications',
-                trailing: Switch(
-                  value: _notificationsEnabled,
-                  onChanged: (v) => setState(() => _notificationsEnabled = v),
-                  activeThumbColor: AppColors.primary,
-                ),
-              ),
-              const Divider(height: 0.5, indent: 16),
-              _buildSettingRow('Confidentialité', trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary)),
-            ],
+          child: _buildSettingRow(
+            'Notifications',
+            trailing: Switch(
+              value: _notificationsEnabled,
+              onChanged: (v) => setState(() => _notificationsEnabled = v),
+              activeThumbColor: AppColors.primary,
+            ),
           ),
         ),
       ],
