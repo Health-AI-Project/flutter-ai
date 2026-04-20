@@ -139,6 +139,36 @@ class MealAnalysisModel {
         advice: advice,
       );
 
+  /// Construit depuis la réponse directe de python.medev-tech.fr/predict/upload
+  factory MealAnalysisModel.fromPythonJson(Map<String, dynamic> json) {
+    final topPred = json['top_prediction'] as Map<String, dynamic>? ?? {};
+    final caloriesData = (json['calories'] as Map<String, dynamic>?)?['top1'] as Map<String, dynamic>? ?? {};
+
+    final rawClass = topPred['class_name'] as String? ?? 'Repas analysé';
+    final displayName = rawClass.replaceAll('_', ' ');
+    final confidence = (topPred['score'] as num?)?.toDouble();
+    final estimatedKcal = (caloriesData['estimated_kcal'] as num?)?.toDouble() ?? 0;
+
+    return MealAnalysisModel(
+      foods: [
+        FoodItemModel(
+          name: displayName,
+          calories: estimatedKcal,
+          proteins: 0,
+          carbs: 0,
+          fats: 0,
+        ),
+      ],
+      totalCalories: estimatedKcal,
+      totalProteins: 0,
+      totalCarbs: 0,
+      totalFats: 0,
+      suggestions: [],
+      detectedFood: displayName,
+      confidence: confidence,
+    );
+  }
+
   MealAnalysisModel withAiAnalysis({
     required bool isSafe,
     required List<String> warnings,

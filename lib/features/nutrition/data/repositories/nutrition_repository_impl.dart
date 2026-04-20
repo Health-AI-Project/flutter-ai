@@ -2,13 +2,17 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/meal_analysis.dart';
 import '../../domain/repositories/nutrition_repository.dart';
-import '../../../../core/network/dio_client.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/utils/image_utils.dart';
 import '../models/meal_analysis_model.dart';
 
 class NutritionRepositoryImpl implements NutritionRepository {
-  final Dio _dio = DioClient.instance;
+  // Appel direct au service Python — le BFF n'expose pas encore le bon endpoint
+  final Dio _pythonDio = Dio(BaseOptions(
+    baseUrl: ApiConstants.pythonServiceUrl,
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 60),
+  ));
 
   @override
   Future<MealAnalysis> analyzeMeal({
@@ -18,61 +22,28 @@ class NutritionRepositoryImpl implements NutritionRepository {
     final compressedPath = await ImageUtils.compress(imagePath);
 
     try {
-      // Étape 1 : upload de l'image → macros brutes
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(
           compressedPath,
           filename: 'meal.jpg',
         ),
-        'userId': userId,
+        'top_k': '3',
       });
 
-      final uploadResponse = await _dio.post(
-        ApiConstants.uploadMeal,
+      final uploadResponse = await _pythonDio.post(
+        '/predict/upload',
         data: formData,
-      ).catchError((e) {
-        if (e is DioException && e.response?.statusCode == 500) {
-          throw Exception('Service d\'analyse indisponible. Réessaie plus tard.');
-        }
-        throw e;
-      });
+      );
 
-      MealAnalysisModel model = MealAnalysisModel.fromUploadJson(
+      final model = MealAnalysisModel.fromPythonJson(
         uploadResponse.data as Map<String, dynamic>,
       );
 
-      // Étape 2 : analyse IA → is_safe, warnings, advice
-      try {
-        final analyzeResponse = await _dio.post(
-          ApiConstants.analyzeMeal,
-          data: {
-            'ingredients': ['meal'],
-            'macros': {
-              'calories': model.totalCalories.toInt(),
-              'protein': model.totalProteins.toInt(),
-              'carbs': model.totalCarbs.toInt(),
-              'fat': model.totalFats.toInt(),
-            },
-          },
-        );
-
-        final aiData = analyzeResponse.data as Map<String, dynamic>;
-        model = model.withAiAnalysis(
-          isSafe: aiData['is_safe'] as bool? ?? true,
-          warnings: (aiData['warnings'] as List<dynamic>?)
-                  ?.map((e) => e as String)
-                  .toList() ??
-              [],
-          advice: aiData['advice'] as String? ?? '',
-        );
-      } catch (e) {
-        // L'analyse IA est non-bloquante : on retourne les macros même si elle échoue
-        debugPrint('WARN : analyse IA échouée (non-bloquant) — $e');
-      }
-
       return model.toEntity();
+    } on DioException catch (e) {
+      debugPrint('ERREUR upload Python service — $e');
+      throw Exception('Service d\'analyse indisponible. Réessaie plus tard.');
     } finally {
-      // Ne supprimer que si c'est un fichier temporaire créé par compress()
       if (compressedPath != imagePath) {
         await ImageUtils.deleteTemp(compressedPath);
       }

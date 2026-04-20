@@ -4,6 +4,11 @@ class ApiConstants {
     defaultValue: 'http://localhost:3002',
   );
 
+  static const String pythonServiceUrl = String.fromEnvironment(
+    'PYTHON_SERVICE_URL',
+    defaultValue: 'https://python.medev-tech.fr',
+  );
+
   // Auth calls vont directement sur l'auth-service (le BFF proxy consomme le body avant de le transférer)
   static const String authBaseUrl = String.fromEnvironment(
     'AUTH_SERVICE_URL',
