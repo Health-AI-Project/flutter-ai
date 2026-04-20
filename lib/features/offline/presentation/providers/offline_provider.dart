@@ -1,11 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/repositories/offline_repository_impl.dart';
+import '../../data/repositories/offline_repository_mock.dart';
 import '../../domain/entities/week_plan.dart';
 import '../../domain/repositories/offline_repository.dart';
 
+// TODO: switch back to OfflineRepositoryImpl() when /api/coach/plan is ready on the BFF
 final offlineRepositoryProvider = Provider<OfflineRepository>(
-  (ref) => OfflineRepositoryImpl(),
+  (ref) => OfflineRepositoryMock(),
 );
 
 final weekPlanNotifierProvider =

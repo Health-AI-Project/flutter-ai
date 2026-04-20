@@ -1,14 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/utils/image_utils.dart';
+import '../../domain/entities/daily_stats.dart';
+import '../../domain/entities/meal_history_item.dart';
+import '../providers/nutrition_provider.dart';
 
-class NutritionHubScreen extends StatelessWidget {
+class NutritionHubScreen extends ConsumerWidget {
   const NutritionHubScreen({super.key});
 
+  // Objectifs journaliers de référence (en attendant /api/user/profile)
+  static const double _calorieTarget = 2200;
+  static const double _proteinTarget = 150;
+  static const double _carbsTarget = 280;
+  static const double _fatTarget = 73;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(dailyStatsProvider);
+    final historyAsync = ref.watch(nutritionHistoryProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -17,9 +30,23 @@ class NutritionHubScreen extends StatelessWidget {
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
         ),
         actions: [
+          if (statsAsync.isLoading || historyAsync.isLoading)
+            const Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                ),
+              ),
+            ),
           IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () {},
+            icon: const Icon(Icons.refresh_outlined),
+            onPressed: () {
+              ref.invalidate(dailyStatsProvider);
+              ref.invalidate(nutritionHistoryProvider);
+            },
           ),
         ],
       ),
@@ -28,29 +55,47 @@ class NutritionHubScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildDaySummaryCard(),
+            statsAsync.when(
+              data: (stats) => _buildDaySummaryCard(stats),
+              loading: () => _buildDaySummaryCard(DailyStats.empty),
+              error: (_, __) => _buildDaySummaryCard(DailyStats.empty),
+            ),
             const SizedBox(height: 16),
-            _buildMacroGrid(),
+            statsAsync.when(
+              data: (stats) => _buildMacroGrid(stats),
+              loading: () => _buildMacroGrid(DailyStats.empty),
+              error: (_, __) => _buildMacroGrid(DailyStats.empty),
+            ),
             const SizedBox(height: 24),
             _buildAnalyzeSection(context),
             const SizedBox(height: 24),
-            _buildRecentMeals(),
+            historyAsync.when(
+              data: (history) => _buildRecentMeals(history),
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
+              ),
+              error: (_, __) => _buildRecentMeals([]),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDaySummaryCard() {
+  Widget _buildDaySummaryCard(DailyStats stats) {
+    final ratio = _calorieTarget > 0 ? (stats.calories / _calorieTarget).clamp(0.0, 1.0) : 0.0;
+    final pct = (ratio * 100).round();
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border, width: 0.5),
-        boxShadow: const [
-          BoxShadow(blurRadius: 3, color: Color(0x10000000)),
-        ],
+        boxShadow: const [BoxShadow(blurRadius: 3, color: Color(0x10000000))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,15 +119,15 @@ class NutritionHubScreen extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     CircularProgressIndicator(
-                      value: 1840 / 2200,
+                      value: ratio,
                       backgroundColor: AppColors.surfaceAlt,
                       color: AppColors.primary,
                       strokeWidth: 6,
                     ),
-                    const Center(
+                    Center(
                       child: Text(
-                        '84%',
-                        style: TextStyle(
+                        '$pct%',
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
@@ -95,18 +140,18 @@ class NutritionHubScreen extends StatelessWidget {
               const SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
-                    '1 840 kcal',
-                    style: TextStyle(
+                    '${stats.calories.toStringAsFixed(0)} kcal',
+                    style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
                   ),
                   Text(
-                    'sur 2 200 kcal objectif',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    'sur ${_calorieTarget.toStringAsFixed(0)} kcal objectif',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                 ],
               ),
@@ -116,7 +161,7 @@ class NutritionHubScreen extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: 1840 / 2200,
+              value: ratio,
               backgroundColor: AppColors.surfaceAlt,
               color: AppColors.primary,
               minHeight: 6,
@@ -127,7 +172,7 @@ class NutritionHubScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMacroGrid() {
+  Widget _buildMacroGrid(DailyStats stats) {
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -136,10 +181,34 @@ class NutritionHubScreen extends StatelessWidget {
       mainAxisSpacing: 10,
       childAspectRatio: 1.6,
       children: [
-        _MacroCard(label: 'PROTÉINES', value: '82', target: '150', unit: 'g', color: AppColors.primary),
-        _MacroCard(label: 'GLUCIDES', value: '210', target: '280', unit: 'g', color: AppColors.accent),
-        _MacroCard(label: 'LIPIDES', value: '55', target: '73', unit: 'g', color: const Color(0xFFE07B5F)),
-        _MacroCard(label: 'FIBRES', value: '22', target: '30', unit: 'g', color: const Color(0xFF7BB8E0)),
+        _MacroCard(
+          label: 'PROTÉINES',
+          value: stats.protein.toStringAsFixed(0),
+          target: _proteinTarget.toStringAsFixed(0),
+          unit: 'g',
+          color: AppColors.primary,
+        ),
+        _MacroCard(
+          label: 'GLUCIDES',
+          value: stats.carbs.toStringAsFixed(0),
+          target: _carbsTarget.toStringAsFixed(0),
+          unit: 'g',
+          color: AppColors.accent,
+        ),
+        _MacroCard(
+          label: 'LIPIDES',
+          value: stats.fat.toStringAsFixed(0),
+          target: _fatTarget.toStringAsFixed(0),
+          unit: 'g',
+          color: const Color(0xFFE07B5F),
+        ),
+        _MacroCard(
+          label: 'SÉANCES',
+          value: stats.workoutsCount.toString(),
+          target: '5',
+          unit: '',
+          color: const Color(0xFF7BB8E0),
+        ),
       ],
     );
   }
@@ -191,7 +260,7 @@ class NutritionHubScreen extends StatelessWidget {
     }
   }
 
-  Widget _buildRecentMeals() {
+  Widget _buildRecentMeals(List<MealHistoryItem> history) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -205,20 +274,45 @@ class NutritionHubScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border, width: 0.5),
+        if (history.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border, width: 0.5),
+            ),
+            child: const Center(
+              child: Text(
+                'Aucun repas enregistré aujourd\'hui',
+                style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
+              ),
+            ),
+          )
+        else
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border, width: 0.5),
+            ),
+            child: Column(
+              children: history.take(5).toList().asMap().entries.map((entry) {
+                final i = entry.key;
+                final item = entry.value;
+                return Column(
+                  children: [
+                    if (i > 0) const Divider(height: 0.5, indent: 56),
+                    _buildMealRow(
+                      item.date,
+                      '${item.calories.toStringAsFixed(0)} kcal',
+                      Icons.restaurant_outlined,
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
           ),
-          child: Column(
-            children: [
-              _buildMealRow('Déjeuner', '580 kcal', Icons.wb_sunny_outlined),
-              const Divider(height: 0.5, indent: 56),
-              _buildMealRow('Petit-déjeuner', '420 kcal', Icons.breakfast_dining_outlined),
-            ],
-          ),
-        ),
       ],
     );
   }
@@ -242,6 +336,7 @@ class NutritionHubScreen extends StatelessWidget {
             child: Text(
               name,
               style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Text(
@@ -271,7 +366,9 @@ class _MacroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ratio = double.tryParse(value)! / double.tryParse(target)!;
+    final v = double.tryParse(value) ?? 0;
+    final t = double.tryParse(target) ?? 1;
+    final ratio = (v / t).clamp(0.0, 1.0);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -294,7 +391,7 @@ class _MacroCard extends StatelessWidget {
             ),
           ),
           Text(
-            '$value / $target $unit',
+            unit.isEmpty ? '$value / $target' : '$value / $target $unit',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -304,7 +401,7 @@ class _MacroCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: ratio.clamp(0.0, 1.0),
+              value: ratio,
               backgroundColor: AppColors.surfaceAlt,
               color: color,
               minHeight: 4,

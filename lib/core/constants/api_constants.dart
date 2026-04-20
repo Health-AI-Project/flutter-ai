@@ -17,4 +17,6 @@ class ApiConstants {
   static const String generateMenu = '/api/generate-menu';
   static const String weeklyPlan = '/api/coach/plan';
   static const String userProfile = '/api/user/profile';
+  static const String dailyStats = '/api/user/today';
+  static const String nutritionHistory = '/api/nutrition/history';
 }

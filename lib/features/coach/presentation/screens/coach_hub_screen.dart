@@ -1,45 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/theme.dart';
+import '../../../../core/auth/token_storage.dart';
 import '../../../offline/domain/entities/day_plan.dart';
-import '../../../offline/domain/entities/exercise.dart';
+import '../../../offline/presentation/providers/offline_provider.dart';
 
-const _mockWeek = [
-  DayPlan(
-    day: 'Lundi',
-    sessionType: 'Pectoraux / Triceps',
-    durationMinutes: 60,
-    isRestDay: false,
-    exercises: [
-      Exercise(name: 'Développé couché', sets: 4, reps: 10, restSeconds: 10, muscleGroup: 'Pectoraux'),
-      Exercise(name: 'Écarté poulie', sets: 3, reps: 12, restSeconds: 8, muscleGroup: 'Pectoraux'),
-      Exercise(name: 'Dips', sets: 3, reps: 15, restSeconds: 6, muscleGroup: 'Triceps'),
-    ],
-  ),
-  DayPlan(
-    day: 'Mardi',
-    sessionType: 'Repos actif',
-    durationMinutes: 0,
-    isRestDay: true,
-    exercises: [],
-  ),
-  DayPlan(
-    day: 'Mercredi',
-    sessionType: 'Dos / Biceps',
-    durationMinutes: 65,
-    isRestDay: false,
-    exercises: [
-      Exercise(name: 'Tractions', sets: 4, reps: 8, restSeconds: 12, muscleGroup: 'Dos'),
-      Exercise(name: 'Rowing barre', sets: 3, reps: 10, restSeconds: 9, muscleGroup: 'Dos'),
-    ],
-  ),
-];
-
-class CoachHubScreen extends StatelessWidget {
+class CoachHubScreen extends ConsumerStatefulWidget {
   const CoachHubScreen({super.key});
 
   @override
+  ConsumerState<CoachHubScreen> createState() => _CoachHubScreenState();
+}
+
+class _CoachHubScreenState extends ConsumerState<CoachHubScreen> {
+  String? _userId;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() async {
+      _userId = await TokenStorage.getUserId() ?? 'guest';
+      if (mounted) {
+        ref.read(weekPlanNotifierProvider.notifier).loadPlan(_userId!);
+      }
+    });
+  }
+
+  // Retourne l'index du jour courant dans le plan (lundi=0 … dimanche=6)
+  int _todayIndex(List<DayPlan> days) {
+    final weekday = DateTime.now().weekday; // 1=lundi, 7=dimanche
+    final idx = weekday - 1;
+    return idx.clamp(0, days.length - 1);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final planState = ref.watch(weekPlanNotifierProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -48,37 +46,85 @@ class CoachHubScreen extends StatelessWidget {
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.sync), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.history), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.sync),
+            onPressed: () => ref
+                .read(weekPlanNotifierProvider.notifier)
+                .forceSync(_userId ?? 'guest'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.calendar_month_outlined),
+            onPressed: () => context.push('/week-plan'),
+          ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildTodaySession(context),
-            const SizedBox(height: 16),
-            _buildWeekStats(),
-            const SizedBox(height: 24),
-            _buildWeekPreview(context),
-          ],
+      body: planState.when(
+        data: (plan) {
+          if (plan == null) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            );
+          }
+          final todayIdx = _todayIndex(plan.days);
+          final today = plan.days[todayIdx];
+          final previewDays = plan.days.take(3).toList();
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildTodaySession(context, today),
+                const SizedBox(height: 16),
+                _buildWeekStats(plan.days),
+                const SizedBox(height: 24),
+                _buildWeekPreview(context, previewDays),
+              ],
+            ),
+          );
+        },
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.fitness_center_outlined,
+                    size: 64, color: AppColors.textTertiary),
+                const SizedBox(height: 16),
+                Text(
+                  e.toString(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 14, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Réessayer'),
+                  onPressed: () => ref
+                      .read(weekPlanNotifierProvider.notifier)
+                      .loadPlan(_userId ?? 'guest'),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildTodaySession(BuildContext context) {
-    final today = _mockWeek.first;
+  Widget _buildTodaySession(BuildContext context, DayPlan today) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border, width: 0.5),
-        boxShadow: const [
-          BoxShadow(blurRadius: 3, color: Color(0x10000000)),
-        ],
+        boxShadow: const [BoxShadow(blurRadius: 3, color: Color(0x10000000))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,10 +145,20 @@ class CoachHubScreen extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
+                  color: today.isRestDay
+                      ? AppColors.surfaceAlt
+                      : AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.fitness_center, color: AppColors.primary, size: 24),
+                child: Icon(
+                  today.isRestDay
+                      ? Icons.bedtime_outlined
+                      : Icons.fitness_center,
+                  color: today.isRestDay
+                      ? AppColors.textTertiary
+                      : AppColors.primary,
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -119,26 +175,33 @@ class CoachHubScreen extends StatelessWidget {
                     ),
                     Row(
                       children: [
-                        const Icon(Icons.timer_outlined, size: 13, color: AppColors.textTertiary),
+                        const Icon(Icons.timer_outlined,
+                            size: 13, color: AppColors.textTertiary),
                         const SizedBox(width: 4),
                         Text(
-                          '${today.durationMinutes} min',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          today.isRestDay
+                              ? 'Repos'
+                              : '${today.durationMinutes} min',
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.textSecondary),
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: const BoxDecoration(
-                            color: AppColors.accent,
-                            shape: BoxShape.circle,
+                        if (!today.isRestDay) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration: const BoxDecoration(
+                              color: AppColors.accent,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'À faire',
-                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                        ),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'À faire',
+                            style: TextStyle(
+                                fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                        ],
                       ],
                     ),
                   ],
@@ -146,29 +209,41 @@ class CoachHubScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          ElevatedButton(
-            onPressed: () => context.push('/session', extra: today),
-            child: const Text('Démarrer la séance →'),
-          ),
+          if (!today.isRestDay) ...[
+            const SizedBox(height: 14),
+            ElevatedButton(
+              onPressed: () => context.push('/session', extra: today),
+              child: const Text('Démarrer la séance →'),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildWeekStats() {
+  Widget _buildWeekStats(List<DayPlan> days) {
+    final todayIdx = _todayIndex(days);
+    final total = days.where((d) => !d.isRestDay).length;
+    final doneThisWeek = days
+        .asMap()
+        .entries
+        .where((e) => e.key <= todayIdx && !e.value.isRestDay)
+        .length;
+    final totalExercises = days
+        .where((d) => !d.isRestDay)
+        .fold<int>(0, (sum, d) => sum + d.exercises.length);
     return Row(
       children: [
-        _StatCard(value: '3 / 5', label: 'séances'),
+        _StatCard(value: '$doneThisWeek / $total', label: 'séances'),
         const SizedBox(width: 10),
-        _StatCard(value: '1 240', label: 'kcal brûlées'),
+        _StatCard(value: '$totalExercises', label: 'exercices prévus'),
         const SizedBox(width: 10),
-        _StatCard(value: '🔥 5', label: 'jours streak'),
+        _StatCard(value: '🔥 $doneThisWeek', label: 'jours actifs'),
       ],
     );
   }
 
-  Widget _buildWeekPreview(BuildContext context) {
+  Widget _buildWeekPreview(BuildContext context, List<DayPlan> days) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -201,16 +276,18 @@ class CoachHubScreen extends StatelessWidget {
             border: Border.all(color: AppColors.border, width: 0.5),
           ),
           child: Column(
-            children: _mockWeek.asMap().entries.map((entry) {
+            children: days.asMap().entries.map((entry) {
               final i = entry.key;
               final day = entry.value;
-              final isLast = i == _mockWeek.length - 1;
+              final isLast = i == days.length - 1;
               return Column(
                 children: [
                   _DayPreviewRow(
                     dayPlan: day,
-                    isToday: i == 0,
-                    onTap: day.isRestDay ? null : () => context.push('/session', extra: day),
+                    isToday: i == _todayIndex(days),
+                    onTap: day.isRestDay
+                        ? null
+                        : () => context.push('/session', extra: day),
                   ),
                   if (!isLast) const Divider(height: 0.5, indent: 16),
                 ],
@@ -281,7 +358,9 @@ class _DayPreviewRow extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          color: isToday ? AppColors.primaryLight.withValues(alpha: 0.4) : null,
+          color: isToday
+              ? AppColors.primaryLight.withValues(alpha: 0.4)
+              : null,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
@@ -289,13 +368,19 @@ class _DayPreviewRow extends StatelessWidget {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: dayPlan.isRestDay ? AppColors.surfaceAlt : AppColors.primaryLight,
+                  color: dayPlan.isRestDay
+                      ? AppColors.surfaceAlt
+                      : AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
-                  dayPlan.isRestDay ? Icons.bedtime_outlined : Icons.fitness_center_outlined,
+                  dayPlan.isRestDay
+                      ? Icons.bedtime_outlined
+                      : Icons.fitness_center_outlined,
                   size: 14,
-                  color: dayPlan.isRestDay ? AppColors.textTertiary : AppColors.primary,
+                  color: dayPlan.isRestDay
+                      ? AppColors.textTertiary
+                      : AppColors.primary,
                 ),
               ),
               const SizedBox(width: 12),
@@ -313,19 +398,35 @@ class _DayPreviewRow extends StatelessWidget {
                     ),
                     Text(
                       dayPlan.sessionType,
-                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                      style: const TextStyle(
+                          fontSize: 11, color: AppColors.textSecondary),
                     ),
                   ],
                 ),
               ),
-              Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  color: dayPlan.isRestDay ? AppColors.textTertiary : AppColors.primary,
-                  shape: BoxShape.circle,
+              if (isToday)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Aujourd\'hui',
+                    style: TextStyle(fontSize: 10, color: AppColors.primary),
+                  ),
+                )
+              else
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: dayPlan.isRestDay
+                        ? AppColors.textTertiary
+                        : AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
