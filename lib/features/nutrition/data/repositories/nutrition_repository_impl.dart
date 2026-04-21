@@ -2,17 +2,13 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/meal_analysis.dart';
 import '../../domain/repositories/nutrition_repository.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/utils/image_utils.dart';
 import '../models/meal_analysis_model.dart';
 
 class NutritionRepositoryImpl implements NutritionRepository {
-  // Appel direct au service Python — le BFF n'expose pas encore le bon endpoint
-  final Dio _pythonDio = Dio(BaseOptions(
-    baseUrl: ApiConstants.pythonServiceUrl,
-    connectTimeout: const Duration(seconds: 15),
-    receiveTimeout: const Duration(seconds: 60),
-  ));
+  final Dio _dio = DioClient.instance;
 
   @override
   Future<MealAnalysis> analyzeMeal({
@@ -27,22 +23,25 @@ class NutritionRepositoryImpl implements NutritionRepository {
           compressedPath,
           filename: 'meal.jpg',
         ),
-        'top_k': '3',
       });
 
-      final uploadResponse = await _pythonDio.post(
-        '/predict/upload',
+      final uploadResponse = await _dio.post(
+        ApiConstants.uploadMeal,
         data: formData,
       );
 
-      final model = MealAnalysisModel.fromPythonJson(
+      final model = MealAnalysisModel.fromBffJson(
         uploadResponse.data as Map<String, dynamic>,
       );
 
       return model.toEntity();
     } on DioException catch (e) {
-      debugPrint('ERREUR upload Python service — $e');
-      throw Exception('Service d\'analyse indisponible. Réessaie plus tard.');
+      debugPrint('ERREUR upload BFF — $e');
+      final status = e.response?.statusCode;
+      if (status == 502 || status == 503 || status == 500) {
+        throw Exception('Service d\'analyse indisponible. Réessaie plus tard.');
+      }
+      rethrow;
     } finally {
       if (compressedPath != imagePath) {
         await ImageUtils.deleteTemp(compressedPath);

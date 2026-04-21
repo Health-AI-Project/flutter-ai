@@ -24,11 +24,13 @@ class ExerciseModel {
   factory ExerciseModel.fromJson(Map<String, dynamic> json) {
     return ExerciseModel(
       name: json['name'] as String? ?? '',
-      sets: json['sets'] as int? ?? 0,
-      reps: json['reps'] as int? ?? 0,
-      restSeconds: json['restSeconds'] as int? ?? 0,
+      sets: (json['sets'] as num?)?.toInt() ?? 0,
+      reps: (json['reps'] as num?)?.toInt() ?? 0,
+      restSeconds: (json['restSeconds'] as num?)?.toInt() ?? 60,
       videoUrl: json['videoUrl'] as String?,
-      muscleGroup: json['muscleGroup'] as String? ?? '',
+      muscleGroup: json['muscleGroup'] as String?
+          ?? json['description'] as String?
+          ?? '',
     );
   }
 
@@ -71,14 +73,17 @@ class DayPlanModel {
 
   factory DayPlanModel.fromJson(Map<String, dynamic> json) {
     final rawExercises = json['exercises'] as List<dynamic>? ?? [];
+    final exercises = rawExercises
+        .map((e) => ExerciseModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final isRest = json['isRestDay'] as bool? ?? exercises.isEmpty;
     return DayPlanModel(
       day: json['day'] as String? ?? '',
-      sessionType: json['sessionType'] as String? ?? '',
-      exercises: rawExercises
-          .map((e) => ExerciseModel.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      durationMinutes: json['durationMinutes'] as int? ?? 0,
-      isRestDay: json['isRestDay'] as bool? ?? false,
+      sessionType: json['sessionType'] as String? ?? 'strength',
+      exercises: exercises,
+      durationMinutes: (json['durationMinutes'] as num?)?.toInt()
+          ?? exercises.length * 5,
+      isRestDay: isRest,
     );
   }
 
@@ -122,6 +127,16 @@ class WeekPlanModel {
       syncedAt: json['syncedAt'] != null
           ? DateTime.parse(json['syncedAt'] as String)
           : DateTime.now(),
+    );
+  }
+
+  /// Parse the BFF /api/coach/plan response (direct List of DayPlan)
+  factory WeekPlanModel.fromBffList(List<dynamic> list) {
+    return WeekPlanModel(
+      weekPlan: list
+          .map((d) => DayPlanModel.fromJson(d as Map<String, dynamic>))
+          .toList(),
+      syncedAt: DateTime.now(),
     );
   }
 

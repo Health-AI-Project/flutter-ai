@@ -31,10 +31,14 @@ class OfflineRepositoryImpl implements OfflineRepository {
   @override
   Future<WeekPlan> getWeekPlan(String userId) async {
     try {
-      final response = await _dio.get(
-        '${ApiConstants.weeklyPlan}?userId=$userId',
-      );
-      final model = WeekPlanModel.fromJson(response.data as Map<String, dynamic>);
+      final response = await _dio.get(ApiConstants.weeklyPlan);
+      final data = response.data;
+      final WeekPlanModel model;
+      if (data is List) {
+        model = WeekPlanModel.fromBffList(data);
+      } else {
+        model = WeekPlanModel.fromJson(data as Map<String, dynamic>);
+      }
       await _saveToCache(model, userId);
       return model.toEntity();
     } on DioException {
@@ -117,10 +121,14 @@ class OfflineRepositoryImpl implements OfflineRepository {
 
   @override
   Future<WeekPlan> forceSync(String userId) async {
-    final response = await _dio.get(
-      '${ApiConstants.weeklyPlan}?userId=$userId',
-    );
-    final model = WeekPlanModel.fromJson(response.data as Map<String, dynamic>);
+    final response = await _dio.get(ApiConstants.weeklyPlan);
+    final data = response.data;
+    final WeekPlanModel model;
+    if (data is List) {
+      model = WeekPlanModel.fromBffList(data);
+    } else {
+      model = WeekPlanModel.fromJson(data as Map<String, dynamic>);
+    }
     await _saveToCache(model, userId);
     return model.toEntity();
   }

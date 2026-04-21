@@ -139,6 +139,38 @@ class MealAnalysisModel {
         advice: advice,
       );
 
+  /// Construit depuis la réponse BFF /api/nutrition/upload
+  /// Format: { success, food_name, confidence, macros: { calories, protein, carbs, fat } }
+  factory MealAnalysisModel.fromBffJson(Map<String, dynamic> json) {
+    final macros = json['macros'] as Map<String, dynamic>? ?? {};
+    final calories = (macros['calories'] as num?)?.toDouble() ?? 0;
+    final protein = (macros['protein'] as num?)?.toDouble() ?? 0;
+    final carbs = (macros['carbs'] as num?)?.toDouble() ?? 0;
+    final fat = (macros['fat'] as num?)?.toDouble() ?? 0;
+    final rawName = json['food_name'] as String? ?? 'Repas analysé';
+    final displayName = rawName.replaceAll('_', ' ');
+    final confidence = (json['confidence'] as num?)?.toDouble();
+
+    return MealAnalysisModel(
+      foods: [
+        FoodItemModel(
+          name: displayName,
+          calories: calories,
+          proteins: protein,
+          carbs: carbs,
+          fats: fat,
+        ),
+      ],
+      totalCalories: calories,
+      totalProteins: protein,
+      totalCarbs: carbs,
+      totalFats: fat,
+      suggestions: [],
+      detectedFood: displayName,
+      confidence: confidence,
+    );
+  }
+
   /// Construit depuis la réponse directe de python.medev-tech.fr/predict/upload
   factory MealAnalysisModel.fromPythonJson(Map<String, dynamic> json) {
     final topPred = json['top_prediction'] as Map<String, dynamic>? ?? {};
