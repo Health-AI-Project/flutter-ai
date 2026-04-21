@@ -32,6 +32,15 @@ class MealPlanRecipe {
     required this.dishTypes,
     required this.score,
   });
+
+  MealPlanRecipe copyWith({double? calories}) => MealPlanRecipe(
+        id: id, name: name, ingredients: ingredients,
+        calories: calories ?? this.calories,
+        protein: protein, carbs: carbs, fat: fat,
+        sugar: sugar, sodium: sodium, pricePerServing: pricePerServing,
+        preparationTime: preparationTime, imageUrl: imageUrl,
+        diets: diets, dishTypes: dishTypes, score: score,
+      );
 }
 
 class GeneratedMealPlan {
