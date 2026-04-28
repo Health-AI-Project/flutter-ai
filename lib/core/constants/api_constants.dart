@@ -1,7 +1,7 @@
 class ApiConstants {
   static const String baseUrl = String.fromEnvironment(
     'BFF_BASE_URL',
-    defaultValue: 'http://localhost:3002',
+    defaultValue: 'https://hono.medev-tech.fr',
   );
 
   static const String pythonServiceUrl = String.fromEnvironment(
@@ -12,7 +12,7 @@ class ApiConstants {
   // Auth calls vont directement sur l'auth-service (le BFF proxy consomme le body avant de le transférer)
   static const String authBaseUrl = String.fromEnvironment(
     'AUTH_SERVICE_URL',
-    defaultValue: 'http://localhost:3006',
+    defaultValue: 'https://hono.medev-tech.fr',
   );
 
   static const String signIn = '/api/auth/sign-in/email';

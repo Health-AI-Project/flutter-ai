@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const Divider(height: 0.5),
           BottomNavigationBar(
-            currentIndex: _currentIndex,
+            currentIndex: _currentIndex == 0 ? 0 : _currentIndex + 1,
             onTap: (index) {
               if (index == 1) {
                 context.push('/camera');

@@ -35,60 +35,68 @@ class _RpeScreenState extends ConsumerState<RpeScreen> {
         title: const Text('Fin de séance'),
         automaticallyImplyLeading: false,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 16),
-            const Text(
-              'Comment s\'est passée la séance ?',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              dayLabel,
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border, width: 0.5),
-              ),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    '$_rpe / 10',
-                    style: TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.w600,
-                      color: _rpeColor,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _rpeLabel(_rpe),
-                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                  ),
                   const SizedBox(height: 16),
-                  RpeSliderWidget(
-                    value: _rpe,
-                    onChanged: (v) => setState(() => _rpe = v),
+                  const Text(
+                    'Comment s\'est passée la séance ?',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    dayLabel,
+                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border, width: 0.5),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '$_rpe / 10',
+                          style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w600,
+                            color: _rpeColor,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _rpeLabel(_rpe),
+                          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 16),
+                        RpeSliderWidget(
+                          value: _rpe,
+                          onChanged: (v) => setState(() => _rpe = v),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            const Spacer(),
-            SizedBox(
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+            child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _sending ? null : _submit,
@@ -104,22 +112,21 @@ class _RpeScreenState extends ConsumerState<RpeScreen> {
                     : const Text('Valider et terminer'),
               ),
             ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: _sending
-                  ? null
-                  : () {
-                      ref.read(sessionNotifierProvider.notifier).cancelTimer();
-                      context.go('/home');
-                    },
-              child: const Text(
-                'Passer',
-                style: TextStyle(color: AppColors.textTertiary),
-              ),
+          ),
+          TextButton(
+            onPressed: _sending
+                ? null
+                : () {
+                    ref.read(sessionNotifierProvider.notifier).cancelTimer();
+                    context.go('/home');
+                  },
+            child: const Text(
+              'Passer',
+              style: TextStyle(color: AppColors.textTertiary),
             ),
-            const SizedBox(height: 8),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }

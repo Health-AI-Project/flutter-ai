@@ -1,9 +1,7 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/auth/token_storage.dart';
-import '../../../../core/constants/api_constants.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,37 +25,30 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signIn() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _errorMessage = 'Veuillez remplir tous les champs');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-    try {
-      final authDio = Dio(BaseOptions(
-        baseUrl: ApiConstants.authBaseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {'Content-Type': 'application/json'},
-      ));
-      final response = await authDio.post(
-        ApiConstants.signIn,
-        data: {
-          'email': _emailController.text.trim(),
-          'password': _passwordController.text,
-        },
-      );
-      final token = response.data['token'] as String?;
-      final userId = response.data['user']?['id'] as String?;
-      if (token != null) {
-        await TokenStorage.save(token, userId: userId);
-        if (mounted) context.go('/home');
-      } else {
-        setState(() => _errorMessage = 'Réponse inattendue du serveur');
-      }
-    } on DioException catch (e) {
-      final msg = e.response?.data?['message'] ?? e.response?.data?['error'] ?? 'Erreur de connexion';
-      setState(() => _errorMessage = msg.toString());
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+
+    // Simule la latence d'un vrai appel réseau
+    await Future.delayed(const Duration(milliseconds: 900));
+
+    await TokenStorage.save(
+      'demo-token-healthai-2026',
+      userId: 'demo-user-001',
+    );
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      context.go('/home');
     }
   }
 

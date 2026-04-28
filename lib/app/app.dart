@@ -21,14 +21,15 @@ class HealthAIApp extends StatelessWidget {
       title: 'HealthAI Coach',
       theme: AppTheme.lightTheme,
       routerConfig: _router,
+      debugShowCheckedModeBanner: false,
     );
   }
 }
 
 final _router = GoRouter(
   initialLocation: '/login',
-  redirect: (context, state) async {
-    final token = await TokenStorage.get();
+  redirect: (context, state) {
+    final token = TokenStorage.cachedToken;
     final onLogin = state.matchedLocation == '/login';
     if (token == null && !onLogin) return '/login';
     if (token != null && onLogin) return '/home';

@@ -30,9 +30,6 @@ class _AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    if (err.response?.statusCode == 401) {
-      TokenStorage.clear();
-    }
     handler.next(err);
   }
 }

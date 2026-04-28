@@ -88,26 +88,34 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
       body: Column(
         children: [
           Container(
-            height: MediaQuery.of(context).size.height * 0.32,
+            height: MediaQuery.of(context).size.height * 0.30,
             color: AppColors.surfaceAlt,
             child: VideoDemoWidget(videoUrl: exercise.videoUrl),
           ),
-          ExerciseCardWidget(exercise: exercise),
-          if (session.phase == SessionPhase.rest) ...[
-            const SizedBox(height: 16),
-            TimerWidget(
-              timerSeconds: session.timerSeconds,
-              totalSeconds: exercise.restSeconds,
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                children: [
+                  ExerciseCardWidget(exercise: exercise),
+                  if (session.phase == SessionPhase.rest) ...[
+                    const SizedBox(height: 16),
+                    TimerWidget(
+                      timerSeconds: session.timerSeconds,
+                      totalSeconds: exercise.restSeconds,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      session.isPaused ? 'En pause' : 'Repos en cours…',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                  ],
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              session.isPaused ? 'En pause' : 'Repos en cours…',
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-            ),
-          ],
-          const Spacer(),
+          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             child: SizedBox(
               width: double.infinity,
               child: _buildMainButton(session),

@@ -82,4 +82,3 @@ class MealPlanRepositoryImpl implements MealPlanRepository {
     ),
   };
 }
-}
