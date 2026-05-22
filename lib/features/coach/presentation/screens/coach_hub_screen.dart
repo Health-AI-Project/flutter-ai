@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/auth/token_storage.dart';
+import '../../../../shared/widgets/error_state_widget.dart';
 import '../../../offline/domain/entities/day_plan.dart';
 import '../../../offline/presentation/providers/offline_provider.dart';
 
@@ -86,32 +87,13 @@ class _CoachHubScreenState extends ConsumerState<CoachHubScreen> {
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.fitness_center_outlined,
-                    size: 64, color: AppColors.textTertiary),
-                const SizedBox(height: 16),
-                Text(
-                  e.toString(),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 14, color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Réessayer'),
-                  onPressed: () => ref
-                      .read(weekPlanNotifierProvider.notifier)
-                      .loadPlan(_userId ?? 'guest'),
-                ),
-              ],
-            ),
-          ),
+        error: (e, _) => ErrorStateWidget(
+          error: e,
+          context: 'CoachPlan',
+          icon: Icons.fitness_center_outlined,
+          onRetry: () => ref
+              .read(weekPlanNotifierProvider.notifier)
+              .loadPlan(_userId ?? 'guest'),
         ),
       ),
     );

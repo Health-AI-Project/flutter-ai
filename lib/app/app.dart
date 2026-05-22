@@ -3,6 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'theme.dart';
 import '../core/auth/token_storage.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
+import '../features/auth/presentation/screens/signup_screen.dart';
+import '../features/feed/domain/entities/post.dart';
+import '../features/feed/presentation/screens/comments_screen.dart';
+import '../features/feed/presentation/screens/create_post_screen.dart';
 import '../features/nutrition/presentation/screens/camera_screen.dart';
 import '../features/nutrition/presentation/screens/meal_result_screen.dart';
 import '../features/coach/presentation/screens/rpe_screen.dart';
@@ -30,15 +34,20 @@ final _router = GoRouter(
   initialLocation: '/login',
   redirect: (context, state) {
     final token = TokenStorage.cachedToken;
-    final onLogin = state.matchedLocation == '/login';
-    if (token == null && !onLogin) return '/login';
-    if (token != null && onLogin) return '/home';
+    final loc = state.matchedLocation;
+    final publicRoutes = ['/login', '/signup'];
+    if (token == null && !publicRoutes.contains(loc)) return '/login';
+    if (token != null && publicRoutes.contains(loc)) return '/home';
     return null;
   },
   routes: [
     GoRoute(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: '/signup',
+      builder: (context, state) => const SignupScreen(),
     ),
     GoRoute(
       path: '/home',
@@ -73,6 +82,17 @@ final _router = GoRouter(
     GoRoute(
       path: '/meal-plan',
       builder: (context, state) => const MealPlanScreen(),
+    ),
+    GoRoute(
+      path: '/create-post',
+      builder: (context, state) => const CreatePostScreen(),
+    ),
+    GoRoute(
+      path: '/comments',
+      builder: (context, state) {
+        final post = state.extra as Post;
+        return CommentsScreen(post: post);
+      },
     ),
   ],
 );

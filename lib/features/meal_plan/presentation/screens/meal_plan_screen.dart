@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme.dart';
+import '../../../../shared/widgets/error_state_widget.dart';
 import '../../domain/entities/meal_plan.dart';
 import '../providers/meal_plan_provider.dart';
 
@@ -96,7 +97,7 @@ class _MealPlanScreenState extends ConsumerState<MealPlanScreen> {
                   ),
                 ),
               ),
-              error: (e, _) => _ErrorCard(message: e.toString(), onRetry: _generate),
+              error: (e, _) => ErrorCardWidget(error: e, context: 'MealPlan', onRetry: _generate),
               data: (plan) {
                 if (plan == null) return const SizedBox.shrink();
                 return _MealPlanResult(plan: plan);

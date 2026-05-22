@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
-import '../../features/nutrition/presentation/screens/nutrition_hub_screen.dart';
 import '../../features/coach/presentation/screens/coach_hub_screen.dart';
+import '../../features/feed/presentation/screens/feed_screen.dart';
 import '../../features/meal_plan/presentation/screens/meal_plan_screen.dart';
+import '../../features/nutrition/presentation/screens/nutrition_hub_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
     NutritionHubScreen(),
     CoachHubScreen(),
     MealPlanScreen(),
+    FeedScreen(),
     ProfileScreen(),
   ];
 
@@ -71,6 +73,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icon(Icons.restaurant_menu_outlined),
                 activeIcon: Icon(Icons.restaurant_menu),
                 label: 'Menu IA',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.people_outline),
+                activeIcon: Icon(Icons.people),
+                label: 'Communauté',
               ),
               const BottomNavigationBarItem(
                 icon: Icon(Icons.person_outline),

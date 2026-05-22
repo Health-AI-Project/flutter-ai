@@ -6,14 +6,15 @@ import '../../../../core/auth/token_storage.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/dio_client.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignupScreenState extends State<SignupScreen> {
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
@@ -22,16 +23,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _signIn() async {
+  Future<void> _signUp() async {
+    final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    if (email.isEmpty || password.isEmpty) {
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
       setState(() => _errorMessage = 'Veuillez remplir tous les champs');
       return;
     }
@@ -42,18 +45,24 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final response = await DioClient.instance.post(
+      await DioClient.instance.post(
+        '${ApiConstants.authBaseUrl}${ApiConstants.signUp}',
+        data: {'email': email, 'password': password, 'name': name},
+      );
+
+      // Pas de token à l'inscription — auto-login
+      final loginResponse = await DioClient.instance.post(
         '${ApiConstants.authBaseUrl}${ApiConstants.signIn}',
         data: {'email': email, 'password': password},
       );
-      final data = response.data as Map<String, dynamic>;
+      final data = loginResponse.data as Map<String, dynamic>;
       final token = data['access_token'] as String;
       final userId = (data['user'] as Map<String, dynamic>)['id'] as String;
       await TokenStorage.save(token, userId: userId);
       if (mounted) context.go('/home');
     } on DioException catch (e) {
       final msg = (e.response?.data as Map<String, dynamic>?)?['message']
-          ?? 'Identifiants invalides';
+          ?? 'Erreur lors de l\'inscription';
       setState(() => _errorMessage = msg);
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -64,15 +73,22 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () => context.go('/login'),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              _buildHeader(),
               const SizedBox(height: 32),
-              _buildLogo(),
-              const SizedBox(height: 48),
               _buildFields(),
               const SizedBox(height: 24),
               if (_errorMessage != null)
@@ -85,21 +101,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ElevatedButton(
-                onPressed: _isLoading ? null : _signIn,
+                onPressed: _isLoading ? null : _signUp,
                 child: _isLoading
                     ? const SizedBox(
                         height: 18,
                         width: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Se connecter'),
+                    : const Text('Créer mon compte'),
               ),
               const SizedBox(height: 24),
-              _buildDivider(),
-              const SizedBox(height: 24),
-              _buildSocialButtons(),
-              const SizedBox(height: 32),
-              _buildSignupLink(context),
+              _buildLoginLink(context),
             ],
           ),
         ),
@@ -107,31 +119,21 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildLogo() {
-    return Column(
+  Widget _buildHeader() {
+    return const Column(
       children: [
-        Container(
-          width: 72,
-          height: 72,
-          decoration: const BoxDecoration(
-            color: AppColors.primaryLight,
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.spa, color: AppColors.primary, size: 36),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'HealthAI Coach',
+        Text(
+          'Créer un compte',
           style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w500,
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 6),
-        const Text(
-          'Votre santé, personnalisée',
+        SizedBox(height: 6),
+        Text(
+          'Rejoignez HealthAI Coach',
           style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ),
@@ -141,8 +143,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildFields() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
+        TextField(
+          controller: _nameController,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(labelText: 'Nom complet'),
+        ),
+        const SizedBox(height: 12),
         TextField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
@@ -164,80 +171,22 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: () {},
-          child: const Text(
-            'Mot de passe oublié ?',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.primary,
-            ),
-          ),
-        ),
       ],
     );
   }
 
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        const Expanded(child: Divider()),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            'ou',
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textTertiary,
-            ),
-          ),
-        ),
-        const Expanded(child: Divider()),
-      ],
-    );
-  }
-
-  Widget _buildSocialButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            icon: const Text(
-              'G',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            label: const Text('Google'),
-            onPressed: () {},
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: OutlinedButton.icon(
-            icon: const Icon(Icons.apple, color: AppColors.textPrimary),
-            label: const Text('Apple'),
-            onPressed: () {},
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSignupLink(BuildContext context) {
+  Widget _buildLoginLink(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const Text(
-          'Pas encore de compte ? ',
+          'Déjà un compte ? ',
           style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
         ),
         GestureDetector(
-          onTap: () => context.go('/signup'),
+          onTap: () => context.go('/login'),
           child: const Text(
-            'S\'inscrire',
+            'Se connecter',
             style: TextStyle(
               fontSize: 12,
               color: AppColors.primary,
