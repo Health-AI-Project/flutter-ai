@@ -36,10 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    setState(() { _isLoading = true; _errorMessage = null; });
 
     try {
       final response = await DioClient.instance.post(
@@ -66,40 +63,25 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 32),
-              _buildLogo(),
-              const SizedBox(height: 48),
-              _buildFields(),
+              const SizedBox(height: 56),
+              _buildHeader(),
+              const SizedBox(height: 40),
+              _buildForm(),
+              const SizedBox(height: 8),
+              _buildForgotPassword(),
               const SizedBox(height: 24),
-              if (_errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    _errorMessage!,
-                    style: const TextStyle(color: Colors.red, fontSize: 13),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _signIn,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Se connecter'),
-              ),
+              if (_errorMessage != null) _buildError(),
+              _buildLoginButton(),
               const SizedBox(height: 24),
               _buildDivider(),
               const SizedBox(height: 24),
               _buildSocialButtons(),
-              const SizedBox(height: 32),
-              _buildSignupLink(context),
+              const SizedBox(height: 40),
+              _buildSignupLink(),
             ],
           ),
         ),
@@ -107,46 +89,49 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildLogo() {
+  Widget _buildHeader() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 72,
-          height: 72,
-          decoration: const BoxDecoration(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
             color: AppColors.primaryLight,
-            shape: BoxShape.circle,
+            borderRadius: BorderRadius.circular(14),
           ),
-          child: const Icon(Icons.spa, color: AppColors.primary, size: 36),
+          child: const Icon(Icons.spa_rounded, color: AppColors.primary, size: 26),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
         const Text(
-          'HealthAI Coach',
+          'Bienvenue\nde retour 👋',
           style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w500,
+            fontSize: 30,
+            fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
+            height: 1.2,
+            letterSpacing: -0.5,
           ),
-          textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         const Text(
-          'Votre santé, personnalisée',
-          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-          textAlign: TextAlign.center,
+          'Connectez-vous pour continuer votre suivi.',
+          style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
         ),
       ],
     );
   }
 
-  Widget _buildFields() {
+  Widget _buildForm() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         TextField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(labelText: 'Email'),
+          decoration: const InputDecoration(
+            labelText: 'Email',
+            prefixIcon: Icon(Icons.mail_outline_rounded, size: 18, color: AppColors.textTertiary),
+          ),
         ),
         const SizedBox(height: 12),
         TextField(
@@ -154,28 +139,61 @@ class _LoginScreenState extends State<LoginScreen> {
           obscureText: _obscurePassword,
           decoration: InputDecoration(
             labelText: 'Mot de passe',
+            prefixIcon: const Icon(Icons.lock_outline_rounded, size: 18, color: AppColors.textTertiary),
             suffixIcon: IconButton(
               icon: Icon(
-                _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                size: 18,
                 color: AppColors.textTertiary,
               ),
-              onPressed: () =>
-                  setState(() => _obscurePassword = !_obscurePassword),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: () {},
-          child: const Text(
-            'Mot de passe oublié ?',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.primary,
+              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildForgotPassword() {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: TextButton(
+        onPressed: () {},
+        style: TextButton.styleFrom(padding: EdgeInsets.zero),
+        child: const Text('Mot de passe oublié ?', style: TextStyle(fontSize: 13)),
+      ),
+    );
+  }
+
+  Widget _buildError() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline_rounded, size: 16, color: Color(0xFFDC2626)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _errorMessage!,
+              style: const TextStyle(fontSize: 13, color: Color(0xFFDC2626)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoginButton() {
+    return ElevatedButton(
+      onPressed: _isLoading ? null : _signIn,
+      child: _isLoading
+          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+          : const Text('Se connecter'),
     );
   }
 
@@ -184,14 +202,8 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         const Expanded(child: Divider()),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            'ou',
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textTertiary,
-            ),
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text('ou', style: TextStyle(fontSize: 13, color: AppColors.textTertiary)),
         ),
         const Expanded(child: Divider()),
       ],
@@ -203,13 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         Expanded(
           child: OutlinedButton.icon(
-            icon: const Text(
-              'G',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            icon: const Text('G', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
             label: const Text('Google'),
             onPressed: () {},
           ),
@@ -217,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(width: 12),
         Expanded(
           child: OutlinedButton.icon(
-            icon: const Icon(Icons.apple, color: AppColors.textPrimary),
+            icon: const Icon(Icons.apple, size: 18),
             label: const Text('Apple'),
             onPressed: () {},
           ),
@@ -226,23 +232,16 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildSignupLink(BuildContext context) {
+  Widget _buildSignupLink() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text(
-          'Pas encore de compte ? ',
-          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-        ),
+        const Text('Pas encore de compte ? ', style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
         GestureDetector(
           onTap: () => context.go('/signup'),
           child: const Text(
             'S\'inscrire',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.primary,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.primary, fontWeight: FontWeight.w600),
           ),
         ),
       ],

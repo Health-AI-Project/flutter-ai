@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../app/theme.dart';
+import '../../../../shared/widgets/shimmer_widget.dart';
 import '../providers/feed_provider.dart';
 import '../widgets/post_card_widget.dart';
 
@@ -28,7 +29,11 @@ class FeedScreen extends ConsumerWidget {
         scrolledUnderElevation: 0.5,
       ),
       body: feedAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => ListView.builder(
+          padding: const EdgeInsets.only(top: 8),
+          itemCount: 4,
+          itemBuilder: (_, __) => const ShimmerCard(),
+        ),
         error: (err, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -55,7 +60,10 @@ class FeedScreen extends ConsumerWidget {
               : ListView.builder(
                   padding: const EdgeInsets.only(top: 8, bottom: 80),
                   itemCount: posts.length,
-                  itemBuilder: (_, i) => PostCard(post: posts[i]),
+                  itemBuilder: (_, i) => _AnimatedPostItem(
+                    index: i,
+                    child: PostCard(post: posts[i]),
+                  ),
                 ),
         ),
       ),
@@ -66,6 +74,43 @@ class FeedScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _AnimatedPostItem extends StatefulWidget {
+  final int index;
+  final Widget child;
+  const _AnimatedPostItem({required this.index, required this.child});
+
+  @override
+  State<_AnimatedPostItem> createState() => _AnimatedPostItemState();
+}
+
+class _AnimatedPostItemState extends State<_AnimatedPostItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _c;
+  late Animation<double> _opacity;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _opacity = CurvedAnimation(parent: _c, curve: Curves.easeOut);
+    _slide = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _c, curve: Curves.easeOutCubic));
+    Future.delayed(Duration(milliseconds: 60 * widget.index), () {
+      if (mounted) _c.forward();
+    });
+  }
+
+  @override
+  void dispose() { _c.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) => FadeTransition(
+    opacity: _opacity,
+    child: SlideTransition(position: _slide, child: widget.child),
+  );
 }
 
 class _EmptyFeed extends StatelessWidget {

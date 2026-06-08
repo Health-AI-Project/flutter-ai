@@ -25,68 +25,136 @@ class _HomeScreenState extends State<HomeScreen> {
     ProfileScreen(),
   ];
 
+  static const _navItems = [
+    (Icons.restaurant_outlined, Icons.restaurant_rounded, 'Nutrition'),
+    (Icons.fitness_center_outlined, Icons.fitness_center_rounded, 'Coach'),
+    (Icons.auto_awesome_outlined, Icons.auto_awesome_rounded, 'Menu IA'),
+    (Icons.people_outline, Icons.people_rounded, 'Communauté'),
+    (Icons.person_outline, Icons.person_rounded, 'Profil'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Divider(height: 0.5),
-          BottomNavigationBar(
-            currentIndex: _currentIndex == 0 ? 0 : _currentIndex + 1,
-            onTap: (index) {
-              if (index == 1) {
-                context.push('/camera');
-                return;
-              }
-              // index 0→screen 0, 1→camera (handled), 2→screen 1, 3→screen 2, 4→screen 3
-              setState(() => _currentIndex = index > 1 ? index - 1 : index);
-            },
-            items: [
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.restaurant_outlined),
-                activeIcon: Icon(Icons.restaurant),
-                label: 'Nutrition',
-              ),
-              BottomNavigationBarItem(
-                icon: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.add, color: AppColors.textOnPrimary, size: 20),
-                ),
-                label: '',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.fitness_center_outlined),
-                activeIcon: Icon(Icons.fitness_center),
-                label: 'Coach',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.restaurant_menu_outlined),
-                activeIcon: Icon(Icons.restaurant_menu),
-                label: 'Menu IA',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.people_outline),
-                activeIcon: Icon(Icons.people),
-                label: 'Communauté',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline),
-                activeIcon: Icon(Icons.person),
-                label: 'Profil',
-              ),
-            ],
+      bottomNavigationBar: _buildNavBar(context),
+    );
+  }
+
+  Widget _buildNavBar(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x120F172A),
+            blurRadius: 20,
+            offset: Offset(0, -4),
           ),
         ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            children: [
+              // Items 0-1 (Nutrition, Coach)
+              ...[0, 1].map((i) => _NavItem(
+                    icon: _navItems[i].$1,
+                    activeIcon: _navItems[i].$2,
+                    label: _navItems[i].$3,
+                    isSelected: _currentIndex == i,
+                    onTap: () => setState(() => _currentIndex = i),
+                  )),
+              // FAB central
+              Expanded(
+                child: Center(
+                  child: GestureDetector(
+                    onTap: () => context.push('/camera'),
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x4005966A),
+                            blurRadius: 12,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 22),
+                    ),
+                  ),
+                ),
+              ),
+              // Items 2-4 (Menu IA, Communauté, Profil)
+              ...[2, 3, 4].map((i) => _NavItem(
+                    icon: _navItems[i].$1,
+                    activeIcon: _navItems[i].$2,
+                    label: _navItems[i].$3,
+                    isSelected: _currentIndex == i,
+                    onTap: () => setState(() => _currentIndex = i),
+                  )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                isSelected ? activeIcon : icon,
+                key: ValueKey(isSelected),
+                size: 22,
+                color: isSelected ? AppColors.primary : AppColors.textTertiary,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected ? AppColors.primary : AppColors.textTertiary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

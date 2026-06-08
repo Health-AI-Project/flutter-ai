@@ -70,7 +70,7 @@ class _CommentsScreenState extends ConsumerState<CommentsScreen> {
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.border, width: 0.5),
+              boxShadow: AppShadows.card,
             ),
             child: Text(
               widget.post.content,

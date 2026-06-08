@@ -192,7 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.border, width: 0.5),
+                    boxShadow: AppShadows.card,
                   ),
                   child: const Icon(Icons.edit, size: 13, color: AppColors.textSecondary),
                 ),
@@ -251,7 +251,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border, width: 0.5),
+            boxShadow: AppShadows.card,
           ),
           child: _buildSettingRow(
             'Notifications',

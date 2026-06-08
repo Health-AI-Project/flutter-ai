@@ -15,6 +15,7 @@ import '../features/offline/domain/entities/day_plan.dart';
 import '../features/offline/presentation/screens/week_plan_screen.dart';
 import '../features/meal_plan/presentation/screens/meal_plan_screen.dart';
 import '../shared/screens/home_screen.dart';
+import '../shared/screens/splash_screen.dart';
 
 class HealthAIApp extends StatelessWidget {
   const HealthAIApp({super.key});
@@ -30,11 +31,43 @@ class HealthAIApp extends StatelessWidget {
   }
 }
 
+Page<T> _fadePage<T>(Widget child, GoRouterState state) =>
+    CustomTransitionPage<T>(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: const Duration(milliseconds: 300),
+      reverseTransitionDuration: const Duration(milliseconds: 200),
+      transitionsBuilder: (_, animation, __, child) => FadeTransition(
+        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        child: child,
+      ),
+    );
+
+Page<T> _slidePage<T>(Widget child, GoRouterState state) =>
+    CustomTransitionPage<T>(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: const Duration(milliseconds: 350),
+      reverseTransitionDuration: const Duration(milliseconds: 280),
+      transitionsBuilder: (_, animation, __, child) {
+        final slide = Tween<Offset>(
+          begin: const Offset(0, 0.06),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+        final fade = CurvedAnimation(parent: animation, curve: Curves.easeOut);
+        return FadeTransition(
+          opacity: fade,
+          child: SlideTransition(position: slide, child: child),
+        );
+      },
+    );
+
 final _router = GoRouter(
-  initialLocation: '/login',
+  initialLocation: '/splash',
   redirect: (context, state) {
-    final token = TokenStorage.cachedToken;
     final loc = state.matchedLocation;
+    if (loc == '/splash') return null;
+    final token = TokenStorage.cachedToken;
     final publicRoutes = ['/login', '/signup'];
     if (token == null && !publicRoutes.contains(loc)) return '/login';
     if (token != null && publicRoutes.contains(loc)) return '/home';
@@ -42,56 +75,60 @@ final _router = GoRouter(
   },
   routes: [
     GoRoute(
+      path: '/splash',
+      pageBuilder: (c, s) => _fadePage(const SplashScreen(), s),
+    ),
+    GoRoute(
       path: '/login',
-      builder: (context, state) => const LoginScreen(),
+      pageBuilder: (c, s) => _fadePage(const LoginScreen(), s),
     ),
     GoRoute(
       path: '/signup',
-      builder: (context, state) => const SignupScreen(),
+      pageBuilder: (c, s) => _slidePage(const SignupScreen(), s),
     ),
     GoRoute(
       path: '/home',
-      builder: (context, state) => const HomeScreen(),
+      pageBuilder: (c, s) => _fadePage(const HomeScreen(), s),
     ),
     GoRoute(
       path: '/camera',
-      builder: (context, state) => const CameraScreen(),
+      pageBuilder: (c, s) => _slidePage(const CameraScreen(), s),
     ),
     GoRoute(
       path: '/meal-result',
-      builder: (context, state) {
-        final imagePath = state.extra as String;
-        return MealResultScreen(imagePath: imagePath);
+      pageBuilder: (c, s) {
+        final imagePath = s.extra as String;
+        return _slidePage(MealResultScreen(imagePath: imagePath), s);
       },
     ),
     GoRoute(
       path: '/week-plan',
-      builder: (context, state) => const WeekPlanScreen(),
+      pageBuilder: (c, s) => _slidePage(const WeekPlanScreen(), s),
     ),
     GoRoute(
       path: '/session',
-      builder: (context, state) {
-        final dayPlan = state.extra as DayPlan;
-        return SessionScreen(dayPlan: dayPlan);
+      pageBuilder: (c, s) {
+        final dayPlan = s.extra as DayPlan;
+        return _slidePage(SessionScreen(dayPlan: dayPlan), s);
       },
     ),
     GoRoute(
       path: '/rpe',
-      builder: (context, state) => const RpeScreen(),
+      pageBuilder: (c, s) => _slidePage(const RpeScreen(), s),
     ),
     GoRoute(
       path: '/meal-plan',
-      builder: (context, state) => const MealPlanScreen(),
+      pageBuilder: (c, s) => _slidePage(const MealPlanScreen(), s),
     ),
     GoRoute(
       path: '/create-post',
-      builder: (context, state) => const CreatePostScreen(),
+      pageBuilder: (c, s) => _slidePage(const CreatePostScreen(), s),
     ),
     GoRoute(
       path: '/comments',
-      builder: (context, state) {
-        final post = state.extra as Post;
-        return CommentsScreen(post: post);
+      pageBuilder: (c, s) {
+        final post = s.extra as Post;
+        return _slidePage(CommentsScreen(post: post), s);
       },
     ),
   ],
