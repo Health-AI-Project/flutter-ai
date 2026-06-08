@@ -75,6 +75,28 @@ class _CoachHubScreenState extends ConsumerState<CoachHubScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (plan.isDemo)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF8E1),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFFFE082), width: 1),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 16, color: Color(0xFFF9A825)),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Aperçu de démonstration — le service coach est en cours de déploiement.',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF795548)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 _buildTodaySession(context, today),
                 const SizedBox(height: 16),
                 _buildWeekStats(plan.days),
