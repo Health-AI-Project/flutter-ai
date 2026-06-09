@@ -1,0 +1,11 @@
+Lancer l'app Flutter (desktop Linux)
+======================================
+
+Build + lancement :
+  flutter build linux && ./build/linux/x64/release/bundle/healthai_coach_mobile
+
+Lancement direct (si déjà buildé) :
+  ./build/linux/x64/release/bundle/healthai_coach_mobile
+
+Mode debug (hot reload) :
+  flutter run -d linux
