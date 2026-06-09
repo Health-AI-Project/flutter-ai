@@ -15,62 +15,143 @@ class FeedScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        title: const Text(
-          'Communauté',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        elevation: 0,
-        scrolledUnderElevation: 0.5,
-      ),
       body: feedAsync.when(
-        loading: () => ListView.builder(
-          padding: const EdgeInsets.only(top: 8),
-          itemCount: 4,
-          itemBuilder: (_, __) => const ShimmerCard(),
+        loading: () => CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: _buildHero(context, ref, null)),
+            SliverPadding(
+              padding: const EdgeInsets.only(top: 8),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (_, __) => const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: ShimmerCard(),
+                  ),
+                  childCount: 4,
+                ),
+              ),
+            ),
+          ],
         ),
-        error: (err, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.wifi_off, size: 48, color: AppColors.textTertiary),
-              const SizedBox(height: 12),
-              const Text(
-                'Impossible de charger le feed',
-                style: TextStyle(color: AppColors.textSecondary),
+        error: (err, _) => CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: _buildHero(context, ref, null)),
+            SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.wifi_off,
+                        size: 48, color: AppColors.textTertiary),
+                    const SizedBox(height: 12),
+                    const Text('Impossible de charger le feed',
+                        style:
+                            TextStyle(color: AppColors.textSecondary)),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () =>
+                          ref.read(feedProvider.notifier).refresh(),
+                      child: const Text('Réessayer'),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () => ref.read(feedProvider.notifier).refresh(),
-                child: const Text('Réessayer'),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
         data: (posts) => RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () => ref.read(feedProvider.notifier).refresh(),
-          child: posts.isEmpty
-              ? const _EmptyFeed()
-              : ListView.builder(
-                  padding: const EdgeInsets.only(top: 8, bottom: 80),
-                  itemCount: posts.length,
-                  itemBuilder: (_, i) => _AnimatedPostItem(
-                    index: i,
-                    child: PostCard(post: posts[i]),
-                  ),
-                ),
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                  child: _buildHero(context, ref, posts.length)),
+              posts.isEmpty
+                  ? const SliverFillRemaining(child: _EmptyFeed())
+                  : SliverPadding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 80),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (_, i) => _AnimatedPostItem(
+                            index: i,
+                            child: PostCard(post: posts[i]),
+                          ),
+                          childCount: posts.length,
+                        ),
+                      ),
+                    ),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
-        onPressed: () => context.push('/create-post'),
-        child: const Icon(Icons.add, color: Colors.white),
+    );
+  }
+
+  Widget _buildHero(
+      BuildContext context, WidgetRef ref, int? postsCount) {
+    return Container(
+      decoration: const BoxDecoration(gradient: AppGradients.feed),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Communauté',
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white70)),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text('Partage',
+                      style: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          height: 1,
+                          letterSpacing: -1.5)),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => context.push('/create-post'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.add, color: Colors.white, size: 16),
+                          SizedBox(width: 4),
+                          Text('Publier',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              if (postsCount != null)
+                Text('$postsCount publication${postsCount > 1 ? 's' : ''}',
+                    style: const TextStyle(
+                        fontSize: 13, color: Colors.white60))
+              else
+                const Text('Chargement…',
+                    style:
+                        TextStyle(fontSize: 13, color: Colors.white60)),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -94,23 +175,30 @@ class _AnimatedPostItemState extends State<_AnimatedPostItem>
   @override
   void initState() {
     super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _c = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 400));
     _opacity = CurvedAnimation(parent: _c, curve: Curves.easeOut);
-    _slide = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _c, curve: Curves.easeOutCubic));
+    _slide =
+        Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
+            .animate(CurvedAnimation(
+                parent: _c, curve: Curves.easeOutCubic));
     Future.delayed(Duration(milliseconds: 60 * widget.index), () {
       if (mounted) _c.forward();
     });
   }
 
   @override
-  void dispose() { _c.dispose(); super.dispose(); }
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => FadeTransition(
-    opacity: _opacity,
-    child: SlideTransition(position: _slide, child: widget.child),
-  );
+        opacity: _opacity,
+        child: SlideTransition(position: _slide, child: widget.child),
+      );
 }
 
 class _EmptyFeed extends StatelessWidget {
@@ -121,7 +209,8 @@ class _EmptyFeed extends StatelessWidget {
     return ListView(
       children: const [
         SizedBox(height: 120),
-        Icon(Icons.people_outline, size: 56, color: AppColors.textTertiary),
+        Icon(Icons.people_outline,
+            size: 56, color: AppColors.textTertiary),
         SizedBox(height: 16),
         Text(
           'Soyez le premier à publier !',
@@ -136,7 +225,8 @@ class _EmptyFeed extends StatelessWidget {
         Text(
           'Partagez vos succès avec la communauté',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: AppColors.textTertiary),
+          style:
+              TextStyle(fontSize: 13, color: AppColors.textTertiary),
         ),
       ],
     );

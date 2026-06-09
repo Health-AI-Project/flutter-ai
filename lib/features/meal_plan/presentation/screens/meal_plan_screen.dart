@@ -34,76 +34,126 @@ class _MealPlanScreenState extends ConsumerState<MealPlanScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Plan de repas IA'),
-        actions: [
-          if (state.valueOrNull != null)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _generate,
-              tooltip: 'Régénérer',
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: _buildHero(state)),
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                _PreferencesCard(
+                  calories: _calories,
+                  goal: _goal,
+                  allergies: _allergies,
+                  goals: _goals,
+                  allergyOptions: _allergyOptions,
+                  onCaloriesChanged: (v) => setState(() => _calories = v),
+                  onGoalChanged: (v) => setState(() => _goal = v),
+                  onAllergyToggled: (a) => setState(() {
+                    _allergies.contains(a)
+                        ? _allergies.remove(a)
+                        : _allergies.add(a);
+                  }),
+                ),
+                const SizedBox(height: 16),
+                _GradientGenerateButton(
+                  isLoading: state is AsyncLoading,
+                  onTap: state is AsyncLoading ? null : _generate,
+                ),
+                const SizedBox(height: 24),
+                state.when(
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Column(
+                        children: [
+                          CircularProgressIndicator(color: AppColors.primary),
+                          SizedBox(height: 16),
+                          Text(
+                            'Spoonacular recherche vos recettes…',
+                            style: TextStyle(
+                                color: AppColors.textSecondary, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  error: (e, _) => ErrorCardWidget(
+                      error: e, context: 'MealPlan', onRetry: _generate),
+                  data: (plan) {
+                    if (plan == null) return const SizedBox.shrink();
+                    return _MealPlanResult(plan: plan);
+                  },
+                ),
+                const SizedBox(height: 24),
+              ]),
             ),
+          ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _PreferencesCard(
-              calories: _calories,
-              goal: _goal,
-              allergies: _allergies,
-              goals: _goals,
-              allergyOptions: _allergyOptions,
-              onCaloriesChanged: (v) => setState(() => _calories = v),
-              onGoalChanged: (v) => setState(() => _goal = v),
-              onAllergyToggled: (a) => setState(() {
-                _allergies.contains(a)
-                    ? _allergies.remove(a)
-                    : _allergies.add(a);
-              }),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: state is AsyncLoading ? null : _generate,
-              icon: state is AsyncLoading
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.auto_awesome),
-              label: Text(
-                  state is AsyncLoading ? 'Génération...' : 'Générer mon menu'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+    );
+  }
+
+  Widget _buildHero(AsyncValue state) {
+    return Container(
+      decoration: const BoxDecoration(gradient: AppGradients.menu),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Menu IA',
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white70)),
+                  if (state.valueOrNull != null)
+                    GestureDetector(
+                      onTap: _generate,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.refresh,
+                                color: Colors.white, size: 14),
+                            SizedBox(width: 4),
+                            Text('Régénérer',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500)),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            ),
-            const SizedBox(height: 24),
-            state.when(
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Column(
-                    children: [
-                      CircularProgressIndicator(color: AppColors.primary),
-                      SizedBox(height: 16),
-                      Text('Spoonacular recherche vos recettes…',
-                          style: TextStyle(
-                              color: AppColors.textSecondary, fontSize: 13)),
-                    ],
-                  ),
-                ),
+              const SizedBox(height: 12),
+              const Text(
+                'Plan de repas',
+                style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    height: 1,
+                    letterSpacing: -1.5),
               ),
-              error: (e, _) => ErrorCardWidget(error: e, context: 'MealPlan', onRetry: _generate),
-              data: (plan) {
-                if (plan == null) return const SizedBox.shrink();
-                return _MealPlanResult(plan: plan);
-              },
-            ),
-          ],
+              const SizedBox(height: 6),
+              const Text('Généré par IA · personnalisé pour vous',
+                  style: TextStyle(fontSize: 13, color: Colors.white60)),
+            ],
+          ),
         ),
       ),
     );
@@ -115,6 +165,60 @@ class _MealPlanScreenState extends ConsumerState<MealPlanScreen> {
           allergies: _allergies,
           goal: _goal,
         );
+  }
+}
+
+// ─── Gradient generate button ────────────────────────────────────────────────
+
+class _GradientGenerateButton extends StatelessWidget {
+  final bool isLoading;
+  final VoidCallback? onTap;
+
+  const _GradientGenerateButton({required this.isLoading, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 52,
+        decoration: BoxDecoration(
+          gradient: onTap != null ? AppGradients.menu : null,
+          color: onTap != null ? null : AppColors.textTertiary,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: onTap != null
+              ? [
+                  const BoxShadow(
+                      color: Color(0x350EA5E9),
+                      blurRadius: 16,
+                      offset: Offset(0, 6))
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (isLoading)
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
+              )
+            else
+              const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
+            const SizedBox(width: 10),
+            Text(
+              isLoading ? 'Génération…' : 'Générer mon menu',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -145,27 +249,23 @@ class _PreferencesCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: AppShadows.card,
-      ),
+      decoration: AppDecorations.card,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('MES PRÉFÉRENCES',
               style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.08,
-                  color: AppColors.textSecondary)),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                  color: AppColors.textTertiary)),
           const SizedBox(height: 16),
-          // Calories slider
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Objectif calorique',
-                  style: TextStyle(fontSize: 14, color: AppColors.textPrimary)),
+                  style: TextStyle(
+                      fontSize: 14, color: AppColors.textPrimary)),
               Text('$calories kcal',
                   style: const TextStyle(
                       fontSize: 14,
@@ -182,9 +282,9 @@ class _PreferencesCard extends StatelessWidget {
             onChanged: (v) => onCaloriesChanged(v.toInt()),
           ),
           const SizedBox(height: 8),
-          // Objectif
           const Text('Objectif',
-              style: TextStyle(fontSize: 14, color: AppColors.textPrimary)),
+              style:
+                  TextStyle(fontSize: 14, color: AppColors.textPrimary)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -198,9 +298,9 @@ class _PreferencesCard extends StatelessWidget {
                 .toList(),
           ),
           const SizedBox(height: 12),
-          // Allergies
           const Text('Allergies / intolérances',
-              style: TextStyle(fontSize: 14, color: AppColors.textPrimary)),
+              style:
+                  TextStyle(fontSize: 14, color: AppColors.textPrimary)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -232,23 +332,31 @@ class _MealPlanResult extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const Text('MON MENU DU JOUR',
+            style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+                color: AppColors.textTertiary)),
+        const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(10),
+            gradient: AppGradients.menu,
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.local_fire_department,
-                  color: AppColors.primary, size: 18),
+                  color: Colors.white, size: 18),
               const SizedBox(width: 6),
               Text(
                 'Total journée : ${plan.totalCalories.toStringAsFixed(0)} kcal',
                 style: const TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
+                    color: Colors.white,
                     fontSize: 14),
               ),
             ],
@@ -271,20 +379,15 @@ class _RecipeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: AppShadows.card,
-      ),
+      decoration: AppDecorations.card,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image + label
           Stack(
             children: [
               ClipRRect(
                 borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(12)),
+                    const BorderRadius.vertical(top: Radius.circular(16)),
                 child: recipe.imageUrl != null
                     ? CachedNetworkImage(
                         imageUrl: recipe.imageUrl!,
@@ -302,7 +405,8 @@ class _RecipeCard extends StatelessWidget {
                           height: 160,
                           color: AppColors.surfaceAlt,
                           child: const Icon(Icons.restaurant,
-                              size: 48, color: AppColors.textTertiary),
+                              size: 48,
+                              color: AppColors.textTertiary),
                         ),
                       )
                     : Container(
@@ -316,10 +420,10 @@ class _RecipeCard extends StatelessWidget {
                 top: 10,
                 left: 10,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
+                    gradient: AppGradients.menu,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(label,
@@ -334,8 +438,8 @@ class _RecipeCard extends StatelessWidget {
                   top: 10,
                   right: 10,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.black54,
                       borderRadius: BorderRadius.circular(20),
@@ -343,7 +447,8 @@ class _RecipeCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.star, color: Colors.amber, size: 12),
+                        const Icon(Icons.star,
+                            color: Colors.amber, size: 12),
                         const SizedBox(width: 3),
                         Text('${recipe.score}',
                             style: const TextStyle(
@@ -367,21 +472,22 @@ class _RecipeCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary)),
                 const SizedBox(height: 10),
-                // Macros row
                 Row(
                   children: [
-                    _MacroChip('${recipe.calories.toStringAsFixed(0)} kcal',
+                    _MacroChip(
+                        '${recipe.calories.toStringAsFixed(0)} kcal',
                         AppColors.primary),
                     const SizedBox(width: 6),
-                    _MacroChip('${recipe.protein.toStringAsFixed(0)}g prot.',
+                    _MacroChip(
+                        '${recipe.protein.toStringAsFixed(0)}g prot.',
                         const Color(0xFF1565C0)),
                     const SizedBox(width: 6),
-                    _MacroChip('${recipe.carbs.toStringAsFixed(0)}g gl.',
+                    _MacroChip(
+                        '${recipe.carbs.toStringAsFixed(0)}g gl.',
                         const Color(0xFF6A1B9A)),
                   ],
                 ),
                 const SizedBox(height: 10),
-                // Méta
                 Row(
                   children: [
                     const Icon(Icons.timer_outlined,
@@ -389,7 +495,8 @@ class _RecipeCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text('${recipe.preparationTime} min',
                         style: const TextStyle(
-                            fontSize: 12, color: AppColors.textTertiary)),
+                            fontSize: 12,
+                            color: AppColors.textTertiary)),
                     const SizedBox(width: 12),
                     const Icon(Icons.euro_outlined,
                         size: 14, color: AppColors.textTertiary),
@@ -397,7 +504,8 @@ class _RecipeCard extends StatelessWidget {
                     Text(
                         '${(recipe.pricePerServing / 100).toStringAsFixed(2)} €/pers.',
                         style: const TextStyle(
-                            fontSize: 12, color: AppColors.textTertiary)),
+                            fontSize: 12,
+                            color: AppColors.textTertiary)),
                   ],
                 ),
                 if (recipe.diets.isNotEmpty) ...[
@@ -411,17 +519,18 @@ class _RecipeCard extends StatelessWidget {
                                   horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
                                 color: AppColors.primaryLight,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius:
+                                    BorderRadius.circular(12),
                               ),
                               child: Text(d,
                                   style: const TextStyle(
-                                      fontSize: 11, color: AppColors.primary)),
+                                      fontSize: 11,
+                                      color: AppColors.primary)),
                             ))
                         .toList(),
                   ),
                 ],
                 const SizedBox(height: 12),
-                // Ingrédients
                 const Text('Ingrédients',
                     style: TextStyle(
                         fontSize: 13,
@@ -453,7 +562,8 @@ class _RecipeCard extends StatelessWidget {
                     child: Text(
                         '+${recipe.ingredients.length - 8} autres ingrédients',
                         style: const TextStyle(
-                            fontSize: 11, color: AppColors.textTertiary)),
+                            fontSize: 11,
+                            color: AppColors.textTertiary)),
                   ),
               ],
             ),
@@ -473,36 +583,6 @@ class _RecipeCard extends StatelessWidget {
       child: Text(text,
           style: TextStyle(
               fontSize: 11, fontWeight: FontWeight.w600, color: color)),
-    );
-  }
-}
-
-class _ErrorCard extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-  const _ErrorCard({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFEBEE),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD04040).withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.error_outline, color: Color(0xFFD04040), size: 32),
-          const SizedBox(height: 8),
-          Text(message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  fontSize: 13, color: AppColors.textSecondary)),
-          const SizedBox(height: 12),
-          ElevatedButton(onPressed: onRetry, child: const Text('Réessayer')),
-        ],
-      ),
     );
   }
 }

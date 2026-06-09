@@ -123,22 +123,25 @@ class _CoachHubScreenState extends ConsumerState<CoachHubScreen> {
 
   Widget _buildTodaySession(BuildContext context, DayPlan today) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: AppShadows.card,
+        gradient: today.isRestDay ? null : AppGradients.coach,
+        color: today.isRestDay ? AppColors.surface : null,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: today.isRestDay
+            ? AppShadows.card
+            : [BoxShadow(color: const Color(0xFF7C3AED).withOpacity(0.35), blurRadius: 16, offset: const Offset(0, 6))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'SÉANCE DU JOUR',
             style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.08,
-              color: AppColors.textSecondary,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+              color: today.isRestDay ? AppColors.textTertiary : Colors.white70,
             ),
           ),
           const SizedBox(height: 12),
@@ -150,16 +153,12 @@ class _CoachHubScreenState extends ConsumerState<CoachHubScreen> {
                 decoration: BoxDecoration(
                   color: today.isRestDay
                       ? AppColors.surfaceAlt
-                      : AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(10),
+                      : Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  today.isRestDay
-                      ? Icons.bedtime_outlined
-                      : Icons.fitness_center,
-                  color: today.isRestDay
-                      ? AppColors.textTertiary
-                      : AppColors.primary,
+                  today.isRestDay ? Icons.bedtime_outlined : Icons.fitness_center_rounded,
+                  color: today.isRestDay ? AppColors.textTertiary : Colors.white,
                   size: 24,
                 ),
               ),
@@ -170,23 +169,23 @@ class _CoachHubScreenState extends ConsumerState<CoachHubScreen> {
                   children: [
                     Text(
                       today.sessionType,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary,
+                        color: today.isRestDay ? AppColors.textPrimary : Colors.white,
                       ),
                     ),
                     Row(
                       children: [
-                        const Icon(Icons.timer_outlined,
-                            size: 13, color: AppColors.textTertiary),
+                        Icon(Icons.timer_outlined,
+                            size: 13, color: today.isRestDay ? AppColors.textTertiary : Colors.white60),
                         const SizedBox(width: 4),
                         Text(
                           today.isRestDay
                               ? 'Repos'
                               : '${today.durationMinutes} min',
-                          style: const TextStyle(
-                              fontSize: 12, color: AppColors.textSecondary),
+                          style: TextStyle(
+                              fontSize: 12, color: today.isRestDay ? AppColors.textSecondary : Colors.white70),
                         ),
                         if (!today.isRestDay) ...[
                           const SizedBox(width: 8),
@@ -194,7 +193,7 @@ class _CoachHubScreenState extends ConsumerState<CoachHubScreen> {
                             width: 7,
                             height: 7,
                             decoration: const BoxDecoration(
-                              color: AppColors.accent,
+                              color: Colors.white54,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -202,7 +201,7 @@ class _CoachHubScreenState extends ConsumerState<CoachHubScreen> {
                           const Text(
                             'À faire',
                             style: TextStyle(
-                                fontSize: 12, color: AppColors.textSecondary),
+                                fontSize: 12, color: Colors.white70),
                           ),
                         ],
                       ],
