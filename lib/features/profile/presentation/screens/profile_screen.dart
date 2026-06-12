@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/auth/token_storage.dart';
+import '../../../../core/constants/local_storage_keys.dart';
 import '../../../../core/network/dio_client.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -21,9 +22,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _displayEmail = '';
   String? _localAvatarPath;
 
-  static const _prefAvatarKey = 'profile_avatar_path';
-  static const _prefNameKey = 'profile_display_name';
-
   @override
   void initState() {
     super.initState();
@@ -32,8 +30,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfile() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedAvatar = prefs.getString(_prefAvatarKey);
-    final savedName = prefs.getString(_prefNameKey);
+    final savedAvatar = prefs.getString(LocalStorageKeys.profileAvatarPath);
+    final savedName = prefs.getString(LocalStorageKeys.profileDisplayName);
+    final savedNotifications =
+        prefs.getBool(LocalStorageKeys.profileNotificationsEnabled);
 
     try {
       final response = await DioClient.instance.get('/api/me');
@@ -46,6 +46,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               savedName ?? (identity['name'] as String?) ?? '';
           _displayEmail = (identity['email'] as String?) ?? '';
           _localAvatarPath = savedAvatar;
+          _notificationsEnabled = savedNotifications ?? true;
         });
       }
     } on DioException {
@@ -55,9 +56,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _displayName = savedName ?? '';
           _displayEmail = userId ?? '';
           _localAvatarPath = savedAvatar;
+          _notificationsEnabled = savedNotifications ?? true;
         });
       }
     }
+  }
+
+  Future<void> _setNotificationsEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(LocalStorageKeys.profileNotificationsEnabled, value);
+    if (mounted) setState(() => _notificationsEnabled = value);
   }
 
   Future<void> _editName() async {
@@ -86,7 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     if (result != null && result.isNotEmpty) {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_prefNameKey, result);
+      await prefs.setString(LocalStorageKeys.profileDisplayName, result);
       if (mounted) setState(() => _displayName = result);
     }
   }
@@ -129,7 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (source == null && _localAvatarPath != null) {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_prefAvatarKey);
+      await prefs.remove(LocalStorageKeys.profileAvatarPath);
       if (mounted) setState(() => _localAvatarPath = null);
       return;
     }
@@ -140,7 +148,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           await picker.pickImage(source: source, imageQuality: 80);
       if (picked != null) {
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_prefAvatarKey, picked.path);
+        await prefs.setString(LocalStorageKeys.profileAvatarPath, picked.path);
         if (mounted) setState(() => _localAvatarPath = picked.path);
       }
     }
@@ -315,8 +323,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Notifications',
             trailing: Switch(
               value: _notificationsEnabled,
-              onChanged: (v) =>
-                  setState(() => _notificationsEnabled = v),
+              onChanged: _setNotificationsEnabled,
               activeThumbColor: AppColors.primary,
             ),
           ),

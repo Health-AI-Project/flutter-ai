@@ -46,7 +46,7 @@ class PostCard extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
       child: Row(
         children: [
-          _Avatar(name: post.authorName, size: 36),
+          _Avatar(name: post.authorName, avatarPath: post.authorAvatar, size: 36),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -144,9 +144,10 @@ class PostCard extends ConsumerWidget {
 
 class _Avatar extends StatelessWidget {
   final String name;
+  final String? avatarPath;
   final double size;
 
-  const _Avatar({required this.name, required this.size});
+  const _Avatar({required this.name, this.avatarPath, required this.size});
 
   Color _colorFor(String name) {
     final colors = [
@@ -161,6 +162,17 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final path = avatarPath;
+    if (path != null && path.isNotEmpty) {
+      final isLocal = path.startsWith('/');
+      return CircleAvatar(
+        radius: size / 2,
+        backgroundColor: _colorFor(name),
+        backgroundImage:
+            isLocal ? FileImage(File(path)) : NetworkImage(path) as ImageProvider,
+      );
+    }
+
     final initials = name.isNotEmpty
         ? name.trim().split(' ').map((w) => w[0]).take(2).join().toUpperCase()
         : '?';

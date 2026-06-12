@@ -71,22 +71,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     isSelected: _currentIndex == i,
                     onTap: () => setState(() => _currentIndex = i),
                   )),
-              // FAB central
+              // FAB central gradient
               Expanded(
                 child: Center(
                   child: GestureDetector(
                     onTap: () => context.push('/camera'),
                     child: Container(
-                      width: 48,
-                      height: 48,
+                      width: 50,
+                      height: 50,
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(14),
+                        gradient: AppGradients.nutrition,
+                        borderRadius: BorderRadius.circular(15),
                         boxShadow: const [
                           BoxShadow(
                             color: Color(0x4005966A),
-                            blurRadius: 12,
-                            offset: Offset(0, 4),
+                            blurRadius: 16,
+                            offset: Offset(0, 6),
                           ),
                         ],
                       ),

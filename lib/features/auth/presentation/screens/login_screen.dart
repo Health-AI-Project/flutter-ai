@@ -94,15 +94,23 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 48,
-          height: 48,
+          height: 120,
           decoration: BoxDecoration(
-            color: AppColors.primaryLight,
-            borderRadius: BorderRadius.circular(14),
+            gradient: AppGradients.hero,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF059669).withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-          child: const Icon(Icons.spa_rounded, color: AppColors.primary, size: 26),
+          child: const Center(
+            child: Icon(Icons.spa_rounded, color: Colors.white, size: 48),
+          ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 28),
         const Text(
           'Bienvenue\nde retour 👋',
           style: TextStyle(
@@ -158,11 +166,59 @@ class _LoginScreenState extends State<LoginScreen> {
     return Align(
       alignment: Alignment.centerRight,
       child: TextButton(
-        onPressed: () {},
+        onPressed: _showForgotPasswordDialog,
         style: TextButton.styleFrom(padding: EdgeInsets.zero),
         child: const Text('Mot de passe oublié ?', style: TextStyle(fontSize: 13)),
       ),
     );
+  }
+
+  Future<void> _showForgotPasswordDialog() async {
+    final controller = TextEditingController(text: _emailController.text.trim());
+    final email = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Mot de passe oublié'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Saisissez votre email, nous vous enverrons un lien de réinitialisation.',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                prefixIcon: Icon(Icons.mail_outline_rounded, size: 18, color: AppColors.textTertiary),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('Envoyer'),
+          ),
+        ],
+      ),
+    );
+
+    if (email != null && email.isNotEmpty && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.'),
+        ),
+      );
+    }
   }
 
   Widget _buildError() {
@@ -217,7 +273,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: OutlinedButton.icon(
             icon: const Text('G', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
             label: const Text('Google'),
-            onPressed: () {},
+            onPressed: () => _showSocialLoginUnavailable('Google'),
           ),
         ),
         const SizedBox(width: 12),
@@ -225,10 +281,16 @@ class _LoginScreenState extends State<LoginScreen> {
           child: OutlinedButton.icon(
             icon: const Icon(Icons.apple, size: 18),
             label: const Text('Apple'),
-            onPressed: () {},
+            onPressed: () => _showSocialLoginUnavailable('Apple'),
           ),
         ),
       ],
+    );
+  }
+
+  void _showSocialLoginUnavailable(String provider) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Connexion via $provider bientôt disponible')),
     );
   }
 

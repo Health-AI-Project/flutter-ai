@@ -61,6 +61,34 @@ class AppShadows {
   ];
 }
 
+class AppGradients {
+  static const nutrition = LinearGradient(
+    colors: [Color(0xFF059669), Color(0xFF0EA5E9)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const coach = LinearGradient(
+    colors: [Color(0xFF7C3AED), Color(0xFF6366F1)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const feed = LinearGradient(
+    colors: [Color(0xFFF59E0B), Color(0xFFEF4444)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const menu = LinearGradient(
+    colors: [Color(0xFF0EA5E9), Color(0xFF8B5CF6)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const hero = LinearGradient(
+    colors: [Color(0xFF059669), Color(0xFF0EA5E9), Color(0xFF6366F1)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+}
+
 class AppDecorations {
   static BoxDecoration get card => const BoxDecoration(
         color: AppColors.surface,

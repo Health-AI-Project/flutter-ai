@@ -1,31 +1,66 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../domain/entities/comment.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/repositories/feed_repository.dart';
 import '../../../../core/auth/token_storage.dart';
+import '../../../../core/constants/local_storage_keys.dart';
+import '../datasources/feed_local_storage.dart';
 
 class FeedRepositoryMock implements FeedRepository {
-  final List<Post> _posts = List.from(_initialPosts);
-  final Map<String, List<Comment>> _comments = Map.from(_initialComments);
+  FeedRepositoryMock({FeedLocalStorage? storage})
+      : _storage = storage ?? FeedLocalStorage();
+
+  final FeedLocalStorage _storage;
+
+  List<Post>? _posts;
+  Map<String, List<Comment>>? _comments;
+
+  /// Charge les données persistées (ou les données de démo au premier lancement).
+  Future<void> _ensureLoaded() async {
+    if (_posts != null && _comments != null) return;
+    _posts = await _storage.loadPosts() ?? List<Post>.from(_initialPosts);
+    _comments = await _storage.loadComments() ??
+        _initialComments.map((k, v) => MapEntry(k, List<Comment>.from(v)));
+  }
+
+  Future<void> _persist() async {
+    await _storage.savePosts(_posts!);
+    await _storage.saveComments(_comments!);
+  }
+
+  /// Nom/avatar à utiliser pour les publications/commentaires de
+  /// l'utilisateur courant, en cohérence avec ce qui est affiché sur
+  /// l'écran Profil.
+  Future<(String, String?)> _currentUserIdentity() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString(LocalStorageKeys.profileDisplayName);
+    final avatar = prefs.getString(LocalStorageKeys.profileAvatarPath);
+    return (name?.isNotEmpty == true ? name! : 'Moi', avatar);
+  }
 
   @override
   Future<List<Post>> getPosts({int page = 1, int limit = 20}) async {
+    await _ensureLoaded();
     await Future.delayed(const Duration(milliseconds: 400));
     final start = (page - 1) * limit;
-    if (start >= _posts.length) return [];
-    return _posts.skip(start).take(limit).toList();
+    if (start >= _posts!.length) return [];
+    return _posts!.skip(start).take(limit).toList();
   }
 
   @override
   Future<Post> toggleLike(String postId) async {
+    await _ensureLoaded();
     await Future.delayed(const Duration(milliseconds: 150));
-    final idx = _posts.indexWhere((p) => p.id == postId);
+    final idx = _posts!.indexWhere((p) => p.id == postId);
     if (idx == -1) throw Exception('Post not found');
-    final post = _posts[idx];
+    final post = _posts![idx];
     final updated = post.copyWith(
       likedByMe: !post.likedByMe,
       likes: post.likedByMe ? post.likes - 1 : post.likes + 1,
     );
-    _posts[idx] = updated;
+    _posts![idx] = updated;
+    await _persist();
     return updated;
   }
 
@@ -35,12 +70,15 @@ class FeedRepositoryMock implements FeedRepository {
     String? mediaPath,
     String? mediaType,
   }) async {
+    await _ensureLoaded();
     await Future.delayed(const Duration(milliseconds: 800));
     final userId = await TokenStorage.getUserId() ?? 'me';
+    final (authorName, authorAvatar) = await _currentUserIdentity();
     final post = Post(
       id: 'post_${DateTime.now().millisecondsSinceEpoch}',
       authorId: userId,
-      authorName: 'Moi',
+      authorName: authorName,
+      authorAvatar: authorAvatar,
       content: content,
       mediaUrl: mediaPath,
       mediaType: mediaType,
@@ -49,15 +87,17 @@ class FeedRepositoryMock implements FeedRepository {
       commentsCount: 0,
       createdAt: DateTime.now(),
     );
-    _posts.insert(0, post);
-    _comments[post.id] = [];
+    _posts!.insert(0, post);
+    _comments![post.id] = [];
+    await _persist();
     return post;
   }
 
   @override
   Future<List<Comment>> getComments(String postId) async {
+    await _ensureLoaded();
     await Future.delayed(const Duration(milliseconds: 250));
-    return List.from(_comments[postId] ?? []);
+    return List.from(_comments![postId] ?? []);
   }
 
   @override
@@ -65,22 +105,25 @@ class FeedRepositoryMock implements FeedRepository {
     required String postId,
     required String content,
   }) async {
+    await _ensureLoaded();
     await Future.delayed(const Duration(milliseconds: 300));
+    final (authorName, _) = await _currentUserIdentity();
     final comment = Comment(
       id: 'comment_${DateTime.now().millisecondsSinceEpoch}',
       postId: postId,
       authorId: 'me',
-      authorName: 'Moi',
+      authorName: authorName,
       content: content,
       createdAt: DateTime.now(),
     );
-    _comments.putIfAbsent(postId, () => []).add(comment);
-    final idx = _posts.indexWhere((p) => p.id == postId);
+    _comments!.putIfAbsent(postId, () => []).add(comment);
+    final idx = _posts!.indexWhere((p) => p.id == postId);
     if (idx != -1) {
-      _posts[idx] = _posts[idx].copyWith(
-        commentsCount: _posts[idx].commentsCount + 1,
+      _posts![idx] = _posts![idx].copyWith(
+        commentsCount: _posts![idx].commentsCount + 1,
       );
     }
+    await _persist();
     return comment;
   }
 }
