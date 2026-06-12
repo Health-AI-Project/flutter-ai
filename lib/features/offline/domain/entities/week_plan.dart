@@ -4,10 +4,12 @@ class WeekPlan {
   final List<DayPlan> days;
   final DateTime syncedAt;
   final bool isFromCache;
+  final bool isDemo;
 
   const WeekPlan({
     required this.days,
     required this.syncedAt,
     this.isFromCache = false,
+    this.isDemo = false,
   });
 }

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/auth/token_storage.dart';
+import '../../../../core/utils/error_utils.dart';
+import '../../../../shared/widgets/error_state_widget.dart';
 import '../providers/nutrition_provider.dart';
 import '../widgets/macro_table_widget.dart';
 
@@ -44,18 +46,22 @@ class _MealResultScreenState extends ConsumerState<MealResultScreen> {
 
     ref.listen<AsyncValue>(nutritionProvider, (_, next) {
       if (next is AsyncError && context.mounted) {
+        final appError = parseError(next.error, context: 'NutritionUpload');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(next.error.toString()),
+            content: Text(appError.userMessage),
             backgroundColor: const Color(0xFFD04040),
-            action: SnackBarAction(
-              label: 'Réessayer',
-              textColor: AppColors.textOnPrimary,
-              onPressed: () async {
-                final userId = await TokenStorage.getUserId() ?? 'guest';
-                _notifier.analyzeMeal(widget.imagePath, userId);
-              },
-            ),
+            duration: const Duration(seconds: 5),
+            action: appError.isRetryable
+                ? SnackBarAction(
+                    label: 'Réessayer',
+                    textColor: AppColors.textOnPrimary,
+                    onPressed: () async {
+                      final userId = await TokenStorage.getUserId() ?? 'guest';
+                      _notifier.analyzeMeal(widget.imagePath, userId);
+                    },
+                  )
+                : null,
           ),
         );
       }
@@ -97,30 +103,14 @@ class _MealResultScreenState extends ConsumerState<MealResultScreen> {
                   ),
                 ),
               ),
-              error: (error, _) => Center(
-                child: Column(
-                  children: [
-                    const Icon(Icons.error_outline,
-                        size: 48, color: Color(0xFFD04040)),
-                    const SizedBox(height: 8),
-                    Text(
-                      error.toString(),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () async {
-                        final userId = await TokenStorage.getUserId() ?? 'guest';
-                        _notifier.analyzeMeal(widget.imagePath, userId);
-                      },
-                      child: const Text('Réessayer'),
-                    ),
-                  ],
-                ),
+              error: (error, _) => ErrorStateWidget(
+                error: error,
+                context: 'NutritionUpload',
+                icon: Icons.restaurant_outlined,
+                onRetry: () async {
+                  final userId = await TokenStorage.getUserId() ?? 'guest';
+                  _notifier.analyzeMeal(widget.imagePath, userId);
+                },
               ),
               data: (analysis) {
                 if (analysis == null) {

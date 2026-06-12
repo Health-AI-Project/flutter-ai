@@ -12,11 +12,11 @@ class ApiConstants {
   // Auth calls vont directement sur l'auth-service (le BFF proxy consomme le body avant de le transférer)
   static const String authBaseUrl = String.fromEnvironment(
     'AUTH_SERVICE_URL',
-    defaultValue: 'https://hono.medev-tech.fr',
+    defaultValue: 'https://auth-service.medev-tech.fr',
   );
 
-  static const String signIn = '/api/auth/sign-in/email';
-  static const String signUp = '/api/auth/sign-up/email';
+  static const String signIn = '/auth/login';
+  static const String signUp = '/auth/register';
   static const String uploadMeal = '/api/nutrition/upload';
   static const String analyzeMeal = '/api/nutrition/analyze';
   static const String generateMenu = '/api/generate-menu';

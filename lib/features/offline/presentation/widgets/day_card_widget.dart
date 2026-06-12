@@ -19,10 +19,7 @@ class DayCardWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border, width: 0.5),
-        boxShadow: const [
-          BoxShadow(blurRadius: 3, color: Color(0x10000000)),
-        ],
+        boxShadow: AppShadows.card,
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -133,7 +130,7 @@ class _RestDayCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        boxShadow: AppShadows.card,
       ),
       child: Opacity(
         opacity: 0.6,

@@ -65,7 +65,7 @@ class _RpeScreenState extends ConsumerState<RpeScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border, width: 0.5),
+                      boxShadow: AppShadows.card,
                     ),
                     child: Column(
                       children: [

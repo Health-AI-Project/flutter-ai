@@ -42,8 +42,8 @@ class OfflineRepositoryImpl implements OfflineRepository {
       await _saveToCache(model, userId);
       return model.toEntity();
     } on DioException {
-      debugPrint('Offline détecté — fallback mock');
-      return _mockWeekPlan();
+      debugPrint('Offline détecté — fallback cache Isar');
+      return _getFromCache(userId);
     }
   }
 
@@ -73,7 +73,8 @@ class OfflineRepositoryImpl implements OfflineRepository {
         .findAll();
 
     if (days.isEmpty) {
-      throw Exception('Aucun plan disponible — vérifiez votre connexion');
+      debugPrint('[Coach] Cache Isar vide — fallback plan de démonstration');
+      return _demoPlan();
     }
 
     final syncedAt = days.first.syncedAt;
@@ -103,6 +104,46 @@ class OfflineRepositoryImpl implements OfflineRepository {
     );
   }
 
+  WeekPlan _demoPlan() {
+    return WeekPlan(
+      syncedAt: DateTime.now(),
+      isDemo: true,
+      days: [
+        DayPlan(day: 'Lundi', sessionType: 'Force — Haut du corps', durationMinutes: 45, isRestDay: false, exercises: [
+          const Exercise(name: 'Pompes', sets: 4, reps: 12, restSeconds: 60, muscleGroup: 'Pectoraux'),
+          const Exercise(name: 'Rowing haltère', sets: 3, reps: 10, restSeconds: 60, muscleGroup: 'Dos'),
+          const Exercise(name: 'Développé militaire', sets: 3, reps: 10, restSeconds: 90, muscleGroup: 'Épaules'),
+          const Exercise(name: 'Curl biceps', sets: 3, reps: 12, restSeconds: 45, muscleGroup: 'Biceps'),
+        ]),
+        DayPlan(day: 'Mardi', sessionType: 'Cardio — Endurance', durationMinutes: 30, isRestDay: false, exercises: [
+          const Exercise(name: 'Jumping Jacks', sets: 3, reps: 30, restSeconds: 30, muscleGroup: 'Cardio'),
+          const Exercise(name: 'Mountain Climbers', sets: 3, reps: 20, restSeconds: 30, muscleGroup: 'Abdominaux'),
+          const Exercise(name: 'Burpees', sets: 3, reps: 10, restSeconds: 60, muscleGroup: 'Corps entier'),
+        ]),
+        DayPlan(day: 'Mercredi', sessionType: 'Repos actif', durationMinutes: 20, isRestDay: true, exercises: [
+          const Exercise(name: 'Étirements complets', sets: 1, reps: 1, restSeconds: 0, muscleGroup: 'Corps entier'),
+        ]),
+        DayPlan(day: 'Jeudi', sessionType: 'Force — Bas du corps', durationMinutes: 50, isRestDay: false, exercises: [
+          const Exercise(name: 'Squats', sets: 4, reps: 15, restSeconds: 90, muscleGroup: 'Quadriceps'),
+          const Exercise(name: 'Fentes avant', sets: 3, reps: 12, restSeconds: 60, muscleGroup: 'Fessiers'),
+          const Exercise(name: 'Soulevé de terre', sets: 3, reps: 8, restSeconds: 120, muscleGroup: 'Ischio-jambiers'),
+          const Exercise(name: 'Mollets debout', sets: 3, reps: 20, restSeconds: 45, muscleGroup: 'Mollets'),
+        ]),
+        DayPlan(day: 'Vendredi', sessionType: 'HIIT — Intensité', durationMinutes: 35, isRestDay: false, exercises: [
+          const Exercise(name: 'Sprint sur place', sets: 5, reps: 20, restSeconds: 30, muscleGroup: 'Cardio'),
+          const Exercise(name: 'Squat Goblet', sets: 4, reps: 15, restSeconds: 45, muscleGroup: 'Quadriceps'),
+          const Exercise(name: 'Planche', sets: 3, reps: 1, restSeconds: 30, muscleGroup: 'Abdominaux'),
+        ]),
+        DayPlan(day: 'Samedi', sessionType: 'Mobilité & Gainage', durationMinutes: 30, isRestDay: false, exercises: [
+          const Exercise(name: 'Dips sur chaise', sets: 3, reps: 12, restSeconds: 60, muscleGroup: 'Triceps'),
+          const Exercise(name: 'Superman', sets: 3, reps: 15, restSeconds: 45, muscleGroup: 'Dos'),
+          const Exercise(name: 'Crunchs', sets: 3, reps: 20, restSeconds: 30, muscleGroup: 'Abdominaux'),
+        ]),
+        DayPlan(day: 'Dimanche', sessionType: 'Repos complet', durationMinutes: 0, isRestDay: true, exercises: []),
+      ],
+    );
+  }
+
   @override
   Future<bool> hasCachedPlan() async {
     final isar = await _isarFuture;
@@ -121,100 +162,15 @@ class OfflineRepositoryImpl implements OfflineRepository {
 
   @override
   Future<WeekPlan> forceSync(String userId) async {
-    try {
-      final response = await _dio.get(ApiConstants.weeklyPlan);
-      final data = response.data;
-      final WeekPlanModel model;
-      if (data is List) {
-        model = WeekPlanModel.fromBffList(data);
-      } else {
-        model = WeekPlanModel.fromJson(data as Map<String, dynamic>);
-      }
-      await _saveToCache(model, userId);
-      return model.toEntity();
-    } on DioException {
-      return _mockWeekPlan();
+    final response = await _dio.get(ApiConstants.weeklyPlan);
+    final data = response.data;
+    final WeekPlanModel model;
+    if (data is List) {
+      model = WeekPlanModel.fromBffList(data);
+    } else {
+      model = WeekPlanModel.fromJson(data as Map<String, dynamic>);
     }
-  }
-
-  WeekPlan _mockWeekPlan() {
-    return WeekPlan(
-      syncedAt: DateTime.now(),
-      days: [
-        DayPlan(
-          day: 'Lundi',
-          sessionType: 'Force — Haut du corps',
-          durationMinutes: 45,
-          isRestDay: false,
-          exercises: [
-            const Exercise(name: 'Pompes', sets: 4, reps: 12, restSeconds: 60, muscleGroup: 'Pectoraux'),
-            const Exercise(name: 'Rowing haltère', sets: 3, reps: 10, restSeconds: 60, muscleGroup: 'Dos'),
-            const Exercise(name: 'Développé militaire', sets: 3, reps: 10, restSeconds: 90, muscleGroup: 'Épaules'),
-            const Exercise(name: 'Curl biceps', sets: 3, reps: 12, restSeconds: 45, muscleGroup: 'Biceps'),
-          ],
-        ),
-        DayPlan(
-          day: 'Mardi',
-          sessionType: 'Cardio — Endurance',
-          durationMinutes: 30,
-          isRestDay: false,
-          exercises: [
-            const Exercise(name: 'Jumping Jacks', sets: 3, reps: 30, restSeconds: 30, muscleGroup: 'Cardio'),
-            const Exercise(name: 'Mountain Climbers', sets: 3, reps: 20, restSeconds: 30, muscleGroup: 'Abdominaux'),
-            const Exercise(name: 'Burpees', sets: 3, reps: 10, restSeconds: 60, muscleGroup: 'Corps entier'),
-          ],
-        ),
-        DayPlan(
-          day: 'Mercredi',
-          sessionType: 'Repos actif',
-          durationMinutes: 20,
-          isRestDay: true,
-          exercises: [
-            const Exercise(name: 'Étirements complets', sets: 1, reps: 1, restSeconds: 0, muscleGroup: 'Corps entier'),
-          ],
-        ),
-        DayPlan(
-          day: 'Jeudi',
-          sessionType: 'Force — Bas du corps',
-          durationMinutes: 50,
-          isRestDay: false,
-          exercises: [
-            const Exercise(name: 'Squats', sets: 4, reps: 15, restSeconds: 90, muscleGroup: 'Quadriceps'),
-            const Exercise(name: 'Fentes avant', sets: 3, reps: 12, restSeconds: 60, muscleGroup: 'Fessiers'),
-            const Exercise(name: 'Soulevé de terre', sets: 3, reps: 8, restSeconds: 120, muscleGroup: 'Ischio-jambiers'),
-            const Exercise(name: 'Mollets debout', sets: 3, reps: 20, restSeconds: 45, muscleGroup: 'Mollets'),
-          ],
-        ),
-        DayPlan(
-          day: 'Vendredi',
-          sessionType: 'HIIT — Intensité',
-          durationMinutes: 35,
-          isRestDay: false,
-          exercises: [
-            const Exercise(name: 'Sprint sur place', sets: 5, reps: 20, restSeconds: 30, muscleGroup: 'Cardio'),
-            const Exercise(name: 'Squat Goblet', sets: 4, reps: 15, restSeconds: 45, muscleGroup: 'Quadriceps'),
-            const Exercise(name: 'Planche', sets: 3, reps: 1, restSeconds: 30, muscleGroup: 'Abdominaux'),
-          ],
-        ),
-        DayPlan(
-          day: 'Samedi',
-          sessionType: 'Mobilité & Gainage',
-          durationMinutes: 30,
-          isRestDay: false,
-          exercises: [
-            const Exercise(name: 'Dips sur chaise', sets: 3, reps: 12, restSeconds: 60, muscleGroup: 'Triceps'),
-            const Exercise(name: 'Superman', sets: 3, reps: 15, restSeconds: 45, muscleGroup: 'Dos'),
-            const Exercise(name: 'Crunchs', sets: 3, reps: 20, restSeconds: 30, muscleGroup: 'Abdominaux'),
-          ],
-        ),
-        DayPlan(
-          day: 'Dimanche',
-          sessionType: 'Repos complet',
-          durationMinutes: 0,
-          isRestDay: true,
-          exercises: [],
-        ),
-      ],
-    );
+    await _saveToCache(model, userId);
+    return model.toEntity();
   }
 }
