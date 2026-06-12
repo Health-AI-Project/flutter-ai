@@ -4,6 +4,10 @@
 *.pyc
 *.swp
 .DS_Store
+
+# Markdown docs (keep README tracked)
+*.md
+!README.md
 .atom/
 .buildlog/
 .history
