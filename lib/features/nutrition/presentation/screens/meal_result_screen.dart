@@ -5,6 +5,7 @@ import '../../../../app/theme.dart';
 import '../../../../core/auth/token_storage.dart';
 import '../../../../core/utils/error_utils.dart';
 import '../../../../shared/widgets/error_state_widget.dart';
+import '../../domain/entities/meal_analysis.dart';
 import '../providers/nutrition_provider.dart';
 import '../widgets/macro_table_widget.dart';
 
@@ -19,6 +20,7 @@ class MealResultScreen extends ConsumerStatefulWidget {
 
 class _MealResultScreenState extends ConsumerState<MealResultScreen> {
   late final NutritionNotifier _notifier;
+  bool _saved = false;
 
   @override
   void initState() {
@@ -38,6 +40,18 @@ class _MealResultScreenState extends ConsumerState<MealResultScreen> {
   void dispose() {
     Future(() => _notifier.reset());
     super.dispose();
+  }
+
+  Future<void> _saveMeal(MealAnalysis analysis) async {
+    await ref.read(nutritionDailyProvider.notifier).addMeal(
+          analysis,
+          imageUrl: widget.imagePath,
+        );
+    if (!mounted) return;
+    setState(() => _saved = true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Repas ajouté à votre journée nutrition')),
+    );
   }
 
   @override
@@ -133,6 +147,21 @@ class _MealResultScreenState extends ConsumerState<MealResultScreen> {
                     if (!analysis.hasMacros)
                       const SizedBox(height: 16),
                     MacroTableWidget(analysis: analysis),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _saved ? null : () => _saveMeal(analysis),
+                        icon: Icon(_saved ? Icons.check_circle : Icons.save_alt_rounded),
+                        label: Text(_saved ? 'Repas enregistré' : 'Enregistrer ce repas'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _saved ? AppColors.textTertiary : AppColors.primary,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size.fromHeight(48),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        ),
+                      ),
+                    ),
                   ],
                 );
               },

@@ -8,6 +8,7 @@ import '../features/feed/domain/entities/post.dart';
 import '../features/feed/presentation/screens/comments_screen.dart';
 import '../features/feed/presentation/screens/create_post_screen.dart';
 import '../features/nutrition/presentation/screens/camera_screen.dart';
+import '../features/nutrition/presentation/screens/manual_meal_entry_screen.dart';
 import '../features/nutrition/presentation/screens/meal_result_screen.dart';
 import '../features/coach/presentation/screens/rpe_screen.dart';
 import '../features/coach/presentation/screens/session_screen.dart';
@@ -100,6 +101,10 @@ final _router = GoRouter(
         final imagePath = s.extra as String;
         return _slidePage(MealResultScreen(imagePath: imagePath), s);
       },
+    ),
+    GoRoute(
+      path: '/manual-meal',
+      pageBuilder: (c, s) => _slidePage(const ManualMealEntryScreen(), s),
     ),
     GoRoute(
       path: '/week-plan',

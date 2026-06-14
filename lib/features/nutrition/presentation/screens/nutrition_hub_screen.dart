@@ -19,16 +19,15 @@ class NutritionHubScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final statsAsync = ref.watch(dailyStatsProvider);
-    final historyAsync = ref.watch(nutritionHistoryProvider);
+    final dailyAsync = ref.watch(nutritionDailyProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: statsAsync.when(
-              data: (stats) => _GradientHero(stats: stats, calorieTarget: _calorieTarget),
+            child: dailyAsync.when(
+              data: (daily) => _GradientHero(stats: daily.stats, calorieTarget: _calorieTarget),
               loading: () => _GradientHero(stats: DailyStats.empty, calorieTarget: _calorieTarget),
               error: (_, __) => _GradientHero(stats: DailyStats.empty, calorieTarget: _calorieTarget),
             ),
@@ -37,9 +36,9 @@ class NutritionHubScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                statsAsync.when(
-                  data: (stats) => _AnimatedMacroGrid(
-                    stats: stats,
+                dailyAsync.when(
+                  data: (daily) => _AnimatedMacroGrid(
+                    stats: daily.stats,
                     proteinTarget: _proteinTarget,
                     carbsTarget: _carbsTarget,
                     fatTarget: _fatTarget,
@@ -55,8 +54,8 @@ class NutritionHubScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 _buildAnalyzeSection(context),
                 const SizedBox(height: 24),
-                historyAsync.when(
-                  data: (history) => _buildRecentMeals(history),
+                dailyAsync.when(
+                  data: (daily) => _buildRecentMeals(daily.history),
                   loading: () => Column(
                     children: List.generate(3, (_) => const Padding(
                       padding: EdgeInsets.only(bottom: 8),
@@ -87,6 +86,15 @@ class NutritionHubScreen extends ConsumerWidget {
             const SizedBox(width: 10),
             Expanded(child: _GradientButton(label: 'Galerie', icon: Icons.photo_library_rounded, gradient: AppGradients.menu, onTap: () => _pickFromGallery(context))),
           ],
+        ),
+        const SizedBox(height: 10),
+        TextButton.icon(
+          onPressed: () => context.push('/manual-meal'),
+          icon: const Icon(Icons.edit_note_rounded, size: 18, color: AppColors.primary),
+          label: const Text(
+            'Saisir un repas manuellement',
+            style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+          ),
         ),
       ],
     );
@@ -162,6 +170,22 @@ class _GradientHeroState extends State<_GradientHero> with SingleTickerProviderS
     _fadeAnim = Tween<double>(begin: 0, end: 1)
         .animate(CurvedAnimation(parent: _controller, curve: const Interval(0, 0.5)));
     Future.delayed(const Duration(milliseconds: 100), () { if (mounted) _controller.forward(); });
+  }
+
+  @override
+  void didUpdateWidget(covariant _GradientHero oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.stats.calories != widget.stats.calories ||
+        oldWidget.calorieTarget != widget.calorieTarget) {
+      final ratio = widget.calorieTarget > 0
+          ? (widget.stats.calories / widget.calorieTarget).clamp(0.0, 1.0)
+          : 0.0;
+      _counterAnim = Tween<double>(begin: _counterAnim.value, end: widget.stats.calories)
+          .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+      _progressAnim = Tween<double>(begin: _progressAnim.value, end: ratio)
+          .animate(CurvedAnimation(parent: _controller, curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic)));
+      _controller.forward(from: 0);
+    }
   }
 
   @override
